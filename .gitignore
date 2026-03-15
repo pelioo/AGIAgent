@@ -60,3 +60,6 @@ apps/xiaohongshu/
 
 # 排除聊天记录文件 
 .agia_last_output.json
+
+# 排除长期记忆同步 
+long_term_memory/
