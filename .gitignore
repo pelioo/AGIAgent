@@ -57,3 +57,6 @@ data/
 data_tale_alfworld/
 data_tale_textworld_express/
 apps/xiaohongshu/
+
+# 排除聊天记录文件 
+.agia_last_output.json
