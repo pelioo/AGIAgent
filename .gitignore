@@ -63,3 +63,6 @@ apps/xiaohongshu/
 
 # 排除长期记忆同步 
 long_term_memory/
+
+# 排除 Python 
+python/
