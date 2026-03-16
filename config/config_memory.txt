@@ -36,9 +36,9 @@ tfidf_search_weight=0.4
 
 # Memory cleanup configuration
 # Maximum number of memories (old memories will be cleaned up if exceeded)
-max_memory_count=10000
+max_memory_count=1000000
 # Number of days to retain memory
-memory_retention_days=365
+memory_retention_days=3650
 
 # Debug mode
 memory_debug_mode=False
