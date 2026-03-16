@@ -49,11 +49,12 @@ memory_debug_mode=False
 # Default: INFO (shows all information messages)
 # Set to WARNING to reduce output and only show warnings and errors
 # Set to CRITICAL to minimize output, or use log_enabled=False to disable console output completely
-log_level=CRITICAL
-log_enabled=False 
+log_level=INFO
+log_enabled=True 
 
 # Memory module performance monitoring configuration
 # Controls whether to enable performance monitoring and log file generation
 # Set to False to disable performance monitoring and prevent logs/performance.log creation
 # Default: True (enables performance monitoring)
 performance_monitor_enabled=False
+
