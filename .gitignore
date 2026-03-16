@@ -66,3 +66,5 @@ long_term_memory/
 
 # 排除 Python 
 python/
+
+peli/
