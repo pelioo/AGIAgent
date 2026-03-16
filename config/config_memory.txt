@@ -49,8 +49,8 @@ memory_debug_mode=False
 # Default: INFO (shows all information messages)
 # Set to WARNING to reduce output and only show warnings and errors
 # Set to CRITICAL to minimize output, or use log_enabled=False to disable console output completely
-log_level=INFO
-log_enabled=True 
+log_level=CRITICAL
+log_enabled=False
 
 # Memory module performance monitoring configuration
 # Controls whether to enable performance monitoring and log file generation
