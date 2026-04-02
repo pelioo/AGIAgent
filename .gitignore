@@ -21,9 +21,14 @@ wheels/
 *.egg
 
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/
+
+# 排除 内置绿色版 Python 
+
+python/
 
 # IDE
 .idea/
@@ -37,6 +42,7 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
 # Local configuration
 .env
@@ -64,9 +70,9 @@ apps/xiaohongshu/
 # 排除长期记忆同步 
 long_term_memory/
 
-# 排除 Python 
-python/
-
-peli/
-
+# 排除 扩展依赖文件 
 Extend-dependenc/
+
+# 其它排除 
+manager.out
+agia.log
