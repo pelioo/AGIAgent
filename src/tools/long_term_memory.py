@@ -34,10 +34,10 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 try:
-    # Correct import for mem modules
-    from mem.src.core.memory_manager import MemManagerAgent
-    from mem.src.models.memory_cell import MemCell
-    from mem.src.utils.logger import get_logger
+    # Correct import for mem modules - use src.mem.src path
+    from src.mem.src.core.memory_manager import MemManagerAgent
+    from src.mem.src.models.memory_cell import MemCell
+    from src.mem.src.utils.logger import get_logger
 
     _MEM_AVAILABLE = True
 except ImportError as e:
@@ -229,12 +229,71 @@ class LongTermMemoryManager:
                 "memories": []
             }
 
+    def _parse_chinese_time(self, time_query: str) -> Optional[str]:
+        """
+        解析中文时间词汇并转换为标准日期格式
+        
+        Args:
+            time_query: 中文时间词汇，如"今天"、"昨天"、"最近"等
+            
+        Returns:
+            转换后的日期字符串，如果无法解析则返回None
+        """
+        import re
+        from datetime import datetime, timedelta
+        
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # 中文时间词汇映射
+        chinese_time_map = {
+            "今天": today.strftime("%Y-%m-%d"),
+            "今日": today.strftime("%Y-%m-%d"),
+            "昨天": (today - timedelta(days=1)).strftime("%Y-%m-%d"),
+            "昨日": (today - timedelta(days=1)).strftime("%Y-%m-%d"),
+            "前天": (today - timedelta(days=2)).strftime("%Y-%m-%d"),
+            "最近": (today - timedelta(days=7)).strftime("%Y-%m-%d"),
+            "最近几天": (today - timedelta(days=7)).strftime("%Y-%m-%d"),
+            "这周": (today - timedelta(days=7)).strftime("%Y-%m-%d"),
+            "本周": (today - timedelta(days=7)).strftime("%Y-%m-%d"),
+            "上周": (today - timedelta(days=14)).strftime("%Y-%m-%d"),
+            "上周": (today - timedelta(days=7)).strftime("%Y-%m-%d"),  # 覆盖：上周指的是最近7天
+            "上个月": (today - timedelta(days=30)).strftime("%Y-%m-%d"),
+            "最近一个月": (today - timedelta(days=30)).strftime("%Y-%m-%d"),
+            "最近三个月": (today - timedelta(days=90)).strftime("%Y-%m-%d"),
+        }
+        
+        # 检查是否完全匹配中文时间词汇
+        query = time_query.strip()
+        if query in chinese_time_map:
+            return chinese_time_map[query]
+        
+        # 尝试匹配 "N天前" 模式
+        match = re.match(r"(\d+)\s*天前", query)
+        if match:
+            days = int(match.group(1))
+            return (today - timedelta(days=days)).strftime("%Y-%m-%d")
+        
+        # 尝试匹配 "N天前到今天" 模式
+        match = re.match(r"最近(\d+)\s*天", query)
+        if match:
+            days = int(match.group(1))
+            return (today - timedelta(days=days)).strftime("%Y-%m-%d")
+        
+        # 如果是标准日期格式，直接返回
+        match = re.match(r"\d{4}-\d{2}-\d{2}", query)
+        if match:
+            return query
+        
+        # 无法解析，返回None
+        return None
+
     def search_memories_by_time(self, time_query: str, top_k: int = 5) -> Dict[str, Any]:
         """
         Search memories by time
 
         Args:
             time_query: Time query (e.g. "yesterday", "last week", "2024-01-01")
+                       支持中文时间词汇：今天、昨天、最近、上周等
             top_k: Number of memories to return
 
         Returns:
@@ -248,10 +307,15 @@ class LongTermMemoryManager:
             }
 
         try:
+            # 解析时间查询，支持中文时间词汇
+            parsed_date = self._parse_chinese_time(time_query)
+            
             # Use memory manager's time search function if available
             if hasattr(self.memory_manager, 'search_preliminary_memories_by_time'):
+                # 使用解析后的日期进行搜索
+                search_date = parsed_date if parsed_date else time_query
                 memories = self.memory_manager.search_preliminary_memories_by_time(
-                    target_date=time_query,
+                    target_date=search_date,
                     top_k=top_k
                 )
 
@@ -265,6 +329,7 @@ class LongTermMemoryManager:
                     "status": "success",
                     "memories": formatted_memories,
                     "time_query": time_query,
+                    "parsed_date": parsed_date,
                     "total_found": len(memories)
                 }
             else:
@@ -297,15 +362,19 @@ class LongTermMemoryManager:
             status = self.memory_manager.get_status_auto(include_details=True)
 
             if status.get("success", False):
-                stats = status.get("status", {})
+                # 修复: get_status_auto 返回的是扁平结构，直接从顶层获取
+                # 而不是从 status.get("status", {}) 中获取
+                preliminary_stats = status.get("preliminary_memory", {})
+                memoir_stats = status.get("memoir", {})
+                
                 return {
                     "status": "success",
-                    "total_memories": stats.get("total_memories", 0),
-                    "preliminary_memories": stats.get("preliminary_memories", 0),
-                    "memoir_entries": stats.get("memoir_entries", 0),
+                    "total_memories": preliminary_stats.get("memory_count", 0),
+                    "preliminary_memories": preliminary_stats.get("memory_count", 0),
+                    "memoir_entries": memoir_stats.get("entry_count", 0) if isinstance(memoir_stats, dict) else 0,
                     "storage_path": self.memory_dir,
-                    "last_update": stats.get("last_update"),
-                    "health_status": stats.get("health_status", "unknown")
+                    "last_update": status.get("timestamp"),
+                    "health_status": "healthy" if preliminary_stats.get("memory_count", 0) >= 0 else "unknown"
                 }
             else:
                 return {
@@ -480,7 +549,8 @@ class LongTermMemoryTools:
         try:
             result = self.memory_manager.recall_relevant_memories(query, top_k)
 
-            if result.get("success", False):
+            # Check for "status" field or "success" field
+            if result.get("status") == "success" or result.get("success", False):
                 memories = result.get("memories", [])
 
                 # Format output
@@ -545,13 +615,15 @@ class LongTermMemoryTools:
         try:
             result = self.memory_manager.search_memories_by_time(time_query, top_k)
 
-            if result.get("success", False):
+            # Check for "status" field or "success" field
+            # Handle cases where result might be an empty list or missing required fields
+            if isinstance(result, dict) and (result.get("status") == "success" or result.get("success", False) or len(result.get("memories", [])) > 0):
                 memories = result.get("memories", [])
 
                 if not memories:
                     return {
-                        "status": "success",
-                        "message": f"No relevant memories found for time '{time_query}'",
+                        "status": "failed",
+                        "message": f"Invalid time query format: '{time_query}'. Please use formats like '2024Year3Month' or 'Today'.",
                         "memories_count": 0,
                         "memories": []
                     }
@@ -599,7 +671,8 @@ class LongTermMemoryTools:
         try:
             result = self.memory_manager.get_memory_stats()
 
-            if result.get("success", False):
+            # Check for "status" field (used by get_memory_stats) or "success" field
+            if result.get("status") == "success" or result.get("success", False):
                 stats = result
 
                 summary_lines = []

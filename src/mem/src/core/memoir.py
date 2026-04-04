@@ -1643,3 +1643,47 @@ Please return the summary content directly without any additional formatting:"""
                 "error": str(e),
                 "cleaned_count": 0
             }
+
+    def get_status_summary(self) -> Dict[str, Any]:
+        """
+        Get memoir module status summary
+
+        Returns:
+            Status summary dictionary
+        """
+        try:
+            # Count total entries
+            total_entries = 0
+            total_days = 0
+            years_with_data = []
+
+            try:
+                memoir_files = self._get_all_memoir_files()
+                for year in memoir_files:
+                    memoir_data = self._load_memoir(year)
+                    if memoir_data and memoir_data.get("months"):
+                        years_with_data.append(year)
+                        for month, month_data in memoir_data.get("months", {}).items():
+                            days = month_data.get("days", {})
+                            total_days += len([d for d in days.values() if d.get("summary")])
+                            total_entries += 1
+            except Exception as e:
+                logger.warning(f"Failed to count memoir entries: {e}")
+
+            return {
+                "success": True,
+                "entry_count": total_entries,
+                "days_with_data": total_days,
+                "years_with_data": years_with_data,
+                "storage_path": self.storage_path,
+                "timestamp": time.time()
+            }
+        except Exception as e:
+            logger.error(f"Failed to get memoir status summary: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "entry_count": 0,
+                "days_with_data": 0,
+                "years_with_data": []
+            }

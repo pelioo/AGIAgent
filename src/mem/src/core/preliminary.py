@@ -354,6 +354,16 @@ class PreliminaryMemoryManager:
                     "day": int(full_date_match.group(3))
                 }
 
+            # Match "YYYY-MM-DD" format (e.g., "2026-04-04")
+            iso_date_match = re.match(r'^(\d{4})-(\d{1,2})-(\d{1,2})$', date_str)
+            if iso_date_match:
+                return {
+                    "type": "full_date",
+                    "year": int(iso_date_match.group(1)),
+                    "month": int(iso_date_match.group(2)),
+                    "day": int(iso_date_match.group(3))
+                }
+
             # Handle fuzzy time expressions as fallback
             now = time.localtime()
             
