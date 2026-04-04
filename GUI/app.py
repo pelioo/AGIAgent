@@ -18,7 +18,7 @@ limitations under the License.
 
 # 尝试使用 gevent 进行 monkey patching 以支持异步
 try:
-    from gevent import monkey
+    from gevent import monkey  # type: ignore
     monkey.patch_all()
     ASYNC_MODE = 'gevent'
 except ImportError:
@@ -364,6 +364,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode=ASYNC_MODE,
 
 import logging
 logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+logger = logging.getLogger(__name__)
 
 I18N_TEXTS = {
     'zh': {
