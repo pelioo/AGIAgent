@@ -31,10 +31,11 @@ pymupdf>=1.20.0
 # Windows PDF generation
 pywin32>=306; sys_platform == "win32"
 
-# for multimedia data (can be removed)
-pandas
-openpyxl
-tabulate
-markdown
+ # for multimedia data (can be removed)
+ pandas
+ openpyxl
+ tabulate
+ markdown
+ pydub
 
 
