@@ -43,6 +43,7 @@ memory_retention_days=3650
 # Debug mode
 memory_debug_mode=False
 
+# 记忆模块日志配置 
 # Memory module logging configuration
 # Controls the logging level for memory-related operations
 # Available levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
