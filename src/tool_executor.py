@@ -923,6 +923,22 @@ class ToolExecutor:
         
         finish_operation(f"executing task (round {round_counter})")
         
+        # Add current execution result to task_history (short-term memory)
+        history_record = {
+            "role": "assistant",
+            "prompt": prompt,
+            "result": result,
+            "execution_round": round_counter,
+            "has_tool_calls": has_tool_calls,
+            "task_completed": True,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        if has_tool_calls:
+            history_record["tool_calls_count"] = tool_calls_count
+            history_record["successful_executions"] = successful_executions
+        
+        task_history.append(history_record)
+        
         # Return optimized history if available
         if history_was_optimized:
             return (result, task_history)
