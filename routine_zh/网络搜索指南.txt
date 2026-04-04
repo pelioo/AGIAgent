@@ -1,0 +1,585 @@
+# 网络搜索技能 (Web Search Skills v4.0)
+
+## 技能概述
+
+本技能文档针对**大陆地区网络环境**优化，精选可稳定访问的搜索引擎，为 AI Agent 提供高效的网络信息检索能力。
+
+## ⚠️ 核心原则
+
+> **首选必应，其次百度，辅以其他国内引擎**
+>
+> 以下国际引擎因大陆地区无法访问，已移除：~~Google~~、~~Google HK~~、~~DuckDuckGo~~、~~Brave~~、~~Yahoo~~、~~Startpage~~、~~Ecosia~~、~~Qwant~~
+
+---
+
+## 一、搜索引擎列表
+
+### 可用搜索引擎（7个）
+
+| 引擎 | 擅长领域 | 特色功能 | URL格式 |
+|------|----------|----------|---------|
+| **必应中国** ⭐首选 | 中英双语、国际资讯 | 搜索结果质量高 | `https://cn.bing.com/search?q={keyword}` |
+| **百度** | 中文网页、综合搜索 | 百度百科、百度知道、文库 | `https://www.baidu.com/s?wd={keyword}` |
+| **搜狗** | 微信内容、新闻资讯 | 微信搜索（独家）、搜狗问问 | `https://sogou.com/web?query={keyword}` |
+| **360** | 安全内容、软件下载 | 360软件管家、360问答 | `https://www.so.com/s?q={keyword}` |
+| **头条** | 新闻资讯、短视频 | 头条搜索、字节系内容 | `https://so.toutiao.com/search?keyword={keyword}` |
+| **微信搜索** | 微信公众号文章 | 搜狗独家微信搜索 | `https://wx.sogou.com/weixin?type=2&query={keyword}` |
+| **Jisilu** | 量化投资、社区讨论 | 集思录投资社区 | `https://www.jisilu.cn/explore/?keyword={keyword}` |
+
+### 特殊查询引擎（1个）
+
+| 引擎 | 擅长领域 | URL格式 |
+|------|----------|---------|
+| **WolframAlpha** | 数学计算、知识查询 | `https://www.wolframalpha.com/input?i={keyword}` |
+
+---
+
+## 二、引擎选择策略
+
+### 2.1 搜索场景决策树
+
+
+![搜索引擎选择决策树：根据搜索目标类型自动选择最优引擎](images/搜索引擎选择决策树_根据搜索目标类型自动选择最优引擎.svg)
+
+<!-- Available formats: PNG=images/搜索引擎选择决策树_根据搜索目标类型自动选择最优引擎.png, SVG=images/搜索引擎选择决策树_根据搜索目标类型自动选择最优引擎.svg -->
+<!-- Source code file: images/搜索引擎选择决策树_根据搜索目标类型自动选择最优引擎.mmd -->
+
+
+### 2.2 搜索优先级建议
+
+| 优先级 | 场景 | 推荐引擎 |
+|--------|------|----------|
+| ⭐⭐⭐⭐⭐ | 通用搜索、英文内容 | **必应中国** |
+| ⭐⭐⭐⭐⭐ | 中文综合、百度系内容 | **百度** |
+| ⭐⭐⭐⭐ | 微信文章 | **搜狗微信** |
+| ⭐⭐⭐⭐ | 新闻资讯 | **头条** |
+| ⭐⭐⭐ | 软件/安全内容 | **360** |
+| ⭐⭐⭐⭐ | 金融投资 | **Jisilu** |
+| ⭐⭐⭐⭐ | 知识计算 | **WolframAlpha** |
+
+---
+
+## 三、搜索语法
+
+### 3.1 必应搜索语法（首选）
+
+```javascript
+// 基础搜索
+web_fetch({"url": "https://cn.bing.com/search?q=人工智能"})
+
+// 站内搜索
+web_fetch({"url": "https://cn.bing.com/search?q=site:github.com+python"})
+
+// 精确匹配
+web_fetch({"url": "https://cn.bing.com/search?q=\"机器学习\""})
+
+// 排除词
+web_fetch({"url": "https://cn.bing.com/search?q=java -coffee -script"})
+
+// 文件类型
+web_fetch({"url": "https://cn.bing.com/search?q=深度学习+filetype:pdf"})
+
+// 组合搜索
+web_fetch({"url": "https://cn.bing.com/search?q=python+tutorial+入门"})
+
+// 新闻搜索
+web_fetch({"url": "https://cn.bing.com/news/search?q=科技新闻"})
+
+// 图片搜索
+web_fetch({"url": "https://cn.bing.com/images/search?q=风景图片"})
+```
+
+### 3.2 百度搜索语法
+
+```javascript
+// 精确匹配
+web_fetch({"url": "https://www.baidu.com/s?wd=\"人工智能大模型\""})
+
+// 站内搜索
+web_fetch({"url": "https://www.baidu.com/s?wd=site:github.com+python"})
+
+// 文件类型
+web_fetch({"url": "https://www.baidu.com/s?wd=深度学习+pdf"})
+
+// 标题关键词
+web_fetch({"url": "https://www.baidu.com/s?wd=intitle:Python教程"})
+
+// 排除词
+web_fetch({"url": "https://www.baidu.com/s?wd=苹果 -水果 -手机"})
+
+// 百度学术
+web_fetch({"url": "https://xueshu.baidu.com/s?wd=深度学习+医疗诊断"})
+
+// 百度贴吧
+web_fetch({"url": "https://www.baidu.com/s?wd=site:tieba.baidu.com+编程"})
+```
+
+### 3.3 搜狗搜索语法
+
+```javascript
+// 搜狗微信搜索（独家功能）
+web_fetch({"url": "https://wx.sogou.com/weixin?type=2&query=人工智能文章"})
+
+// 新闻搜索
+web_fetch({"url": "https://www.sogou.com/news?q=科技新闻"})
+
+// 搜狗搜索
+web_fetch({"url": "https://sogou.com/web?query=Python教程"})
+
+// 搜狗知乎搜索
+web_fetch({"url": "https://www.sogou.com/web?query=site:zhihu.com+人工智能"})
+
+// 搜狗博客
+web_fetch({"url": "https://www.sogou.com/web?query=site:blog.csdn.net+Python"})
+```
+
+### 3.4 360搜索语法
+
+```javascript
+// 基础搜索
+web_fetch({"url": "https://www.so.com/s?q=Python教程"})
+
+// 站内搜索
+web_fetch({"url": "https://www.so.com/s?q=site:github.com+python"})
+
+// 软件下载（360特色）
+web_fetch({"url": "https://www.so.com/s?q=Python+360软件管家"})
+
+// 360问答
+web_fetch({"url": "https://www.so.com/s?q=如何学习Python+360问答"})
+```
+
+### 3.5 头条搜索语法
+
+```javascript
+// 基础搜索
+web_fetch({"url": "https://so.toutiao.com/search?keyword=科技新闻"})
+
+// 时间过滤
+web_fetch({"url": "https://so.toutiao.com/search?keyword=人工智能&pd=time"})
+
+// 视频搜索
+web_fetch({"url": "https://so.toutiao.com/search?keyword=Python教程&pd=video"})
+```
+
+---
+
+## 四、国内专业平台搜索指南
+
+### 4.1 技术社区搜索
+
+```javascript
+// CSDN（技术文章首选）
+web_fetch({"url": "https://cn.bing.com/search?q=site:blog.csdn.net+Python+教程"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:download.csdn.net+Python+源码"})
+web_fetch({"url": "https://www.baidu.com/s?wd=site:blog.csdn.net+机器学习+实战"})
+
+// 博客园
+web_fetch({"url": "https://cn.bing.com/search?q=site:cnblogs.com+Python+入门"})
+web_fetch({"url": "https://www.baidu.com/s?wd=site:cnblogs.com+.NET+Core+教程"})
+
+// Stack Overflow 中文站
+web_fetch({"url": "https://cn.bing.com/search?q=site:stackoverflow.com+python+ssl"})
+
+// 开源中国
+web_fetch({"url": "https://cn.bing.com/search?q=site:oschina.net+Vue+教程"})
+
+// 掘金
+web_fetch({"url": "https://cn.bing.com/search?q=site:juejin.cn+React+最佳实践"})
+```
+
+### 4.2 社区问答搜索
+
+```javascript
+// 知乎
+web_fetch({"url": "https://cn.bing.com/search?q=site:zhihu.com+人工智能+职业发展"})
+web_fetch({"url": "https://www.baidu.com/s?wd=site:zhihu.com+Python+入门+推荐"})
+
+// 简书
+web_fetch({"url": "https://cn.bing.com/search?q=site:jianshu.com+数据分析+教程"})
+web_fetch({"url": "https://www.baidu.com/s?wd=site:jianshu.com+写作+技巧"})
+
+// 百度知道
+web_fetch({"url": "https://www.baidu.com/s?wd=Python+是什么+百度知道"})
+
+// 百度贴吧
+web_fetch({"url": "https://www.baidu.com/s?wd=site:tieba.baidu.com+Python+编程"})
+```
+
+### 4.3 视频教程搜索
+
+```javascript
+// B站（Bilibili视频教程）
+web_fetch({"url": "https://cn.bing.com/search?q=site:bilibili.com+Python+教程+播放"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:bilibili.com+机器学习+吴恩达"})
+web_fetch({"url": "https://www.baidu.com/s?wd=site:bilibili.com+前端开发+视频教程"})
+
+// 网易公开课
+web_fetch({"url": "https://cn.bing.com/search?q=site:open.163.com+心理学+课程"})
+
+// 腾讯课堂
+web_fetch({"url": "https://cn.bing.com/search?q=site:ke.qq.com+Python+实战"})
+```
+
+### 4.4 学术资源搜索
+
+```javascript
+// 百度学术
+web_fetch({"url": "https://xueshu.baidu.com/s?wd=深度学习+医疗诊断+论文"})
+web_fetch({"url": "https://xueshu.baidu.com/s?wd=machine+learning+filetype:pdf"})
+
+// 中国知网（CNKI）
+web_fetch({"url": "https://cn.bing.com/search?q=site:cnki.net+人工智能+综述"})
+web_fetch({"url": "https://www.baidu.com/s?wd=site:cnki.net+企业管理+毕业论文"})
+
+// 万方数据
+web_fetch({"url": "https://cn.bing.com/search?q=site:wanfangdata.com.cn+技术报告"})
+
+// 维普网
+web_fetch({"url": "https://cn.bing.com/search?q=site:cqvip.com+科学研究"})
+```
+
+### 4.5 金融投资搜索
+
+```javascript
+// Jisilu（集思录量化投资）
+web_fetch({"url": "https://www.jisilu.cn/explore/?keyword=Python量化"})
+web_fetch({"url": "https://www.jisilu.cn/explore/?keyword=ETF组合"})
+web_fetch({"url": "https://www.jisilu.cn/explore/?keyword=可转债+投资"})
+web_fetch({"url": "https://www.jisilu.cn/explore/?tab=good&keyword=低波动"})
+web_fetch({"url": "https://www.jisilu.cn/explore/?keyword=价值投资"})
+
+// 东方财富
+web_fetch({"url": "https://cn.bing.com/search?q=site:eastmoney.com+股票分析"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:eastmoney.com+基金+净值"})
+
+// 巨潮资讯（财报）
+web_fetch({"url": "https://cn.bing.com/search?q=site:cninfo.com.cn+年报"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:disclosure.cn+公告"})
+
+// 同花顺
+web_fetch({"url": "https://cn.bing.com/search?q=site:10jqka.com.cn+个股分析"})
+```
+
+### 4.6 代码托管搜索
+
+```javascript
+// GitHub（通过必应site搜索）
+web_fetch({"url": "https://cn.bing.com/search?q=site:github.com+python+machine+learning"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:github.com+996.ICU"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:github.com+README+Stars:>1000"})
+
+// Gitee（国内代码托管）
+web_fetch({"url": "https://cn.bing.com/search?q=site:gitee.com+Spring+Boot+教程"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:gitee.com+Vue+开源项目"})
+
+// GitLab
+web_fetch({"url": "https://cn.bing.com/search?q=site:gitlab.com+docker+ci/cd"})
+```
+
+---
+
+## 五、高级操作符
+
+### 5.1 通用操作符（必应/百度支持）
+
+| 操作符 | 功能 | 示例 |
+|--------|------|------|
+| `" "` | 精确匹配 | `"机器学习"` |
+| `-` | 排除关键词 | `python -snake` |
+| `site:` | 站内搜索 | `site:github.com python` |
+| `OR` | 或运算 | `machine learning OR deep learning` |
+| `filetype:` | 文件类型 | `filetype:pdf report` |
+
+### 5.2 百度专有操作符
+
+| 操作符 | 功能 | 示例 |
+|--------|------|------|
+| `intitle:` | 标题包含 | `intitle:Python教程` |
+| `inurl:` | URL包含 | `inurl:login` |
+
+### 5.3 时间过滤参数
+
+| 参数 | 描述 | 适用引擎 |
+|------|------|----------|
+| `tbs=qdr:h` | 过去一小时 | 必应 |
+| `tbs=qdr:d` | 过去一天 | 必应 |
+| `tbs=qdr:w` | 过去一周 | 必应 |
+| `tbs=qdr:m` | 过去一月 | 必应 |
+| `tbs=qdr:y` | 过去一年 | 必应 |
+
+---
+
+## 六、场景化搜索方案
+
+### 场景1：技术问题排查
+
+```javascript
+// 首选：必应 + 百度
+web_fetch({"url": "https://cn.bing.com/search?q=Python+SSL证书错误+解决方案"})
+web_fetch({"url": "https://www.baidu.com/s?wd=Python+SSL+解决方案"})
+
+// 次选：站内搜索
+web_fetch({"url": "https://cn.bing.com/search?q=site:blog.csdn.net+Python+SSL"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:stackoverflow.com+python+ssl"})
+
+// 备选：GitHub官方
+web_fetch({"url": "https://cn.bing.com/search?q=site:github.com+python+requests+ssl"})
+```
+
+### 场景2：学术资料查找
+
+```javascript
+// 百度学术（首选）
+web_fetch({"url": "https://xueshu.baidu.com/s?wd=深度学习+医疗诊断"})
+
+// PDF文档
+web_fetch({"url": "https://cn.bing.com/search?q=深度学习+论文+pdf"})
+web_fetch({"url": "https://www.baidu.com/s?wd=深度学习+论文+pdf+site:arxiv.org"})
+
+// 百度文库
+web_fetch({"url": "https://www.baidu.com/s?wd=site:wenku.baidu.com+机器学习"})
+```
+
+### 场景3：实时数据查询
+
+```javascript
+// 货币换算（WolframAlpha）
+web_fetch({"url": "https://www.wolframalpha.com/input?i=1000+USD+to+CNY"})
+
+// 股票行情
+web_fetch({"url": "https://www.wolframalpha.com/input?i=AAPL+stock"})
+
+// 天气查询
+web_fetch({"url": "https://www.wolframalpha.com/input?i=weather+in+Beijing"})
+
+// 数学计算
+web_fetch({"url": "https://www.wolframalpha.com/input?i=integrate+x^2+dx+from+0+to+1"})
+```
+
+### 场景4：社交媒体内容
+
+```javascript
+// 微信文章搜索（搜狗独家）
+web_fetch({"url": "https://wx.sogou.com/weixin?type=2&query=人工智能分析"})
+
+// 知乎
+web_fetch({"url": "https://cn.bing.com/search?q=site:zhihu.com+人工智能"})
+
+// 微博
+web_fetch({"url": "https://cn.bing.com/search?q=site:weibo.com+科技热点"})
+
+// B站
+web_fetch({"url": "https://cn.bing.com/search?q=site:bilibili.com+Python教程"})
+```
+
+### 场景5：开发者文档搜索
+
+```javascript
+// 官方文档聚合
+web_fetch({"url": "https://cn.bing.com/search?q=site:docs.python.org+教程"})
+web_fetch({"url": "https://cn.bing.com/search?q=site:reactjs.org+快速入门"})
+
+// GitHub（必应搜索）
+web_fetch({"url": "https://cn.bing.com/search?q=site:github.com+python+README"})
+
+// Gitee（国内代码托管）
+web_fetch({"url": "https://cn.bing.com/search?q=site:gitee.com+机器学习"})
+```
+
+### 场景6：金融投资搜索
+
+```javascript
+// Jisilu社区（量化投资）
+web_fetch({"url": "https://www.jisilu.cn/explore/?keyword=Python量化"})
+web_fetch({"url": "https://www.jisilu.cn/explore/?keyword=ETF组合"})
+
+// 东方财富
+web_fetch({"url": "https://cn.bing.com/search?q=site:eastmoney.com+股票分析"})
+
+// 巨潮资讯（财报）
+web_fetch({"url": "https://cn.bing.com/search?q=site:cninfo.com.cn+年报"})
+```
+
+---
+
+## 七、搜索引擎能力对比
+
+### 7.1 国内引擎能力矩阵
+
+| 能力维度 | 必应 | 百度 | 搜狗 | 360 | 头条 |
+|----------|------|------|------|-----|------|
+| **搜索质量** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
+| **中文支持** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| **英文搜索** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+| **微信搜索** | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **新闻资讯** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **学术资源** | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+| **国际资讯** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
+
+### 7.2 专业平台覆盖
+
+| 平台类型 | 推荐引擎 | 搜索方式 |
+|----------|----------|----------|
+| 技术文章 | 必应/百度 + site:CSDN | 站内搜索 |
+| 社区问答 | 必应/百度 + site:知乎 | 站内搜索 |
+| 视频教程 | 必应/百度 + site:B站 | 站内搜索 |
+| 学术论文 | 百度学术/知网 | 专业搜索 |
+| 金融数据 | Jisilu/东方财富 | 专业搜索 |
+| 代码托管 | 必应 + site:GitHub/Gitee | 站内搜索 |
+
+---
+
+## 八、搜索结果验证机制
+
+### 8.1 可信度检查清单
+
+搜索结果获取后，建议按照以下清单进行验证：
+
+#### 来源验证
+- [ ] 是否来自权威网站（官方文档、知名媒体、学术机构）
+- [ ] 作者是否有相关资质或认证
+- [ ] 是否有明确的发布时间
+- [ ] 网站是否有完善的关于我们/联系方式
+
+#### 内容交叉验证
+- [ ] 关键信息是否在多个来源中得到确认
+- [ ] 数据是否有官方出处标注
+- [ ] 观点是否有具体证据或数据支撑
+- [ ] 是否存在明显的信息矛盾
+
+#### 时效性验证
+- [ ] 内容是否为最新发布
+- [ ] 技术文档是否与当前版本匹配
+- [ ] 法规政策是否有最新更新
+- [ ] 联系方式/价格等信息是否过期
+
+#### 专业性验证
+- [ ] 技术术语使用是否准确
+- [ ] 逻辑推理是否严谨
+- [ ] 是否存在明显的利益相关（广告/软文）
+
+### 8.2 多源验证策略
+
+```javascript
+// 关键信息多源验证示例
+
+// 场景：验证 Python Web 框架性能数据
+// 源1：官方文档
+web_fetch({"url": "https://cn.bing.com/search?q=site:fastapi.tiangolo.com+performance"})
+// 源2：技术博客
+web_fetch({"url": "https://cn.bing.com/search?q=site:blog.csdn.net+FastAPI+性能+测试"})
+// 源3：独立评测
+web_fetch({"url": "https://cn.bing.com/search?q=FastAPI+vs+Django+性能+基准测试"})
+```
+
+---
+
+## 九、快速参考
+
+### 9.1 搜索公式
+
+```
+必应搜索 = https://cn.bing.com/search?q={关键词}
+百度搜索 = https://www.baidu.com/s?wd={关键词}
+搜狗搜索 = https://sogou.com/web?query={关键词}
+360搜索 = https://www.so.com/s?q={关键词}
+头条搜索 = https://so.toutiao.com/search?keyword={关键词}
+微信搜索 = https://wx.sogou.com/weixin?type=2&query={关键词}
+WolframAlpha = https://www.wolframalpha.com/input?i={查询}
+```
+
+### 9.2 常用搜索模板
+
+```javascript
+// 技术问题
+web_fetch({"url": "https://cn.bing.com/search?q={技术问题}+{语言/框架}"})
+
+// 官方文档
+web_fetch({"url": "https://cn.bing.com/search?q=site:{官方域名}+{关键词}"})
+
+// 视频教程
+web_fetch({"url": "https://cn.bing.com/search?q={主题}+教程+site:bilibili.com"})
+
+// 问答社区
+web_fetch({"url": "https://cn.bing.com/search?q={问题}+site:zhihu.com"})
+
+// 金融数据
+web_fetch({"url": "https://www.jisilu.cn/explore/?keyword={关键词}"})
+```
+
+---
+
+## 十、最佳实践
+
+### 搜索前
+1. **明确搜索目标**：技术问题/学术资料/实时数据/社交内容
+2. **选择合适引擎**：首选必应，复杂中文用百度
+3. **构造精准关键词**：具体化、避免口语化
+
+### 搜索中
+1. **优先站内搜索**：使用 `site:` 提高精度
+2. **使用精确匹配**：减少噪声干扰
+3. **组合多个关键词**：提高召回率
+
+### 搜索后
+1. **优先查看权威来源**：官方文档、知名社区
+2. **交叉验证重要信息**：多源对比
+3. **复杂问题多引擎对比**：不同引擎互补
+
+---
+
+## 十一、WolframAlpha 查询类型
+
+```javascript
+// 数学计算
+web_fetch({"url": "https://www.wolframalpha.com/input?i=integrate+x^2+dx"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=solve+x^2-5x+6=0"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=d/dx+sin(x)*cos(x)"})
+
+// 单位换算
+web_fetch({"url": "https://www.wolframalpha.com/input?i=100+miles+to+km"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=100+fahrenheit+to+celsius"})
+
+// 货币转换
+web_fetch({"url": "https://www.wolframalpha.com/input?i=100+USD+to+CNY"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=1000+JPY+to+CNY"})
+
+// 股票数据
+web_fetch({"url": "https://www.wolframalpha.com/input?i=AAPL+stock"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=TSLA+stock+price"})
+
+// 天气查询
+web_fetch({"url": "https://www.wolframalpha.com/input?i=weather+in+Beijing"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=weather+in+Shanghai"})
+
+// 人口数据
+web_fetch({"url": "https://www.wolframalpha.com/input?i=population+of+China"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=GDP+of+United+States"})
+
+// 化学元素
+web_fetch({"url": "https://www.wolframalpha.com/input?i=properties+of+gold"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=atomic+number+of+carbon"})
+
+// 营养成分
+web_fetch({"url": "https://www.wolframalpha.com/input?i=nutrition+of+apple"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=calories+in+banana"})
+
+// 代码生成
+web_fetch({"url": "https://www.wolframalpha.com/input?i=generate+python+code+fibonacci"})
+
+// 数据分析
+web_fetch({"url": "https://www.wolframalpha.com/input?i=mean+of+1+2+3+4+5"})
+web_fetch({"url": "https://www.wolframalpha.com/input?i=plot+x^2+from+-10+to+10"})
+```
+
+---
+
+## 文档信息
+
+- **版本**: v4.0
+- **更新日期**: 2026-04-04
+- **核心原则**: 首选必应，其次百度，辅以其他国内引擎
+- **移除引擎**: Google、Google HK、DuckDuckGo、Brave、Yahoo、Startpage、Ecosia、Qwant
+- **新增功能**: Mermaid决策树、国内专业平台指南、搜索结果验证机制
+
