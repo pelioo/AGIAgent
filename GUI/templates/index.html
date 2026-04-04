@@ -25,29 +25,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if is_app_mode %}{{ app_name }}{% else %}{{ i18n.app_title.replace(' GUI', '') }}{% endif %}</title>
     <link href="{{ url_for('static', filename='css/fontawesome.min.css') }}" rel="stylesheet">
-    <!-- 优化FontAwesome字体加载：使用font-display: swap以提升性能 -->
-    <style>
-        @font-face {
-            font-family: "Font Awesome 6 Brands";
-            font-display: swap;
-        }
-        @font-face {
-            font-family: "Font Awesome 6 Free";
-            font-display: swap;
-        }
-        @font-face {
-            font-family: "Font Awesome 5 Brands";
-            font-display: swap;
-        }
-        @font-face {
-            font-family: "Font Awesome 5 Free";
-            font-display: swap;
-        }
-        @font-face {
-            font-family: "FontAwesome";
-            font-display: swap;
-        }
-    </style>
     <!-- Prism.js for syntax highlighting -->
     <link href="{{ url_for('static', filename='css/prism-tomorrow.min.css') }}" rel="stylesheet">
     <!-- Custom Prism.js override styles for better visibility -->
@@ -8911,12 +8888,14 @@
             });
         }
 
-        // 禁用回车键自动执行功能，避免与输入法冲突
+        // Ctrl/Cmd+Enter 发送消息，回车键换行
         userInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            // 检查是否为 Ctrl 或 Cmd 键 + Enter
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
-                return;
+                sendMessage(null); // 发送消息
             }
+            // 回车键不做任何处理，保持默认的换行行为
         });
 
         userInput.addEventListener('input', resizeTextarea);
