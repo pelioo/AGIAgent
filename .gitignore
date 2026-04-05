@@ -76,3 +76,4 @@ Extend-dependenc/
 # 其它排除 
 manager.out
 agia.log
+.snapshots/
