@@ -4184,15 +4184,8 @@
                         <div class="mode-selection">
                             <a href="javascript:void(0);" 
                                id="newUserGuideLink"
-                               style="color: var(--link-color); text-decoration: underline; cursor: pointer; font-size: 0.85em; white-space: nowrap;">
+                               style="color: var(--link-color); text-decoration: underline; cursor: pointer; font-size: 0.85em; white-space: nowrap; margin-right: auto;">
                                 {% if lang == 'zh' %}新手指导{% else %}New User Guide{% endif %}
-                            </a>
-                            <a href="https://agiagentonline.com/colordocintro/"
-                               id="exampleVideoLink"
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               style="color: var(--link-color); text-decoration: underline; cursor: pointer; margin-left: 10px; margin-right: auto; font-size: 0.85em; white-space: nowrap;">
-                                {% if lang == 'zh' %}示例视频{% else %}Example Videos{% endif %}
                             </a>
                             <label style="display: flex; align-items: center; gap: 4px; color: var(--text-primary); font-size: 0.9em; white-space: nowrap;">
                                 <span>{{ i18n.get('routine_file', '规则文件' if lang == 'zh' else 'Routine File') }}:</span>
