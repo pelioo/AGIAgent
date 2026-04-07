@@ -27,6 +27,9 @@ eventlet>=0.30.0
 pyautogui>=0.9.54
 pynput>=1.8.1
 
+# Reinforcement learning environment
+gymnasium>=0.26.0 
+
 #for MCP
 fastmcp
 
