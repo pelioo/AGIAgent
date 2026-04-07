@@ -36,6 +36,9 @@ fastmcp
 #for pdf read
 pymupdf>=1.20.0
 
+#for document parsing
+markitdown
+
 # Windows PDF generation
 pywin32>=306; sys_platform == "win32"
 
