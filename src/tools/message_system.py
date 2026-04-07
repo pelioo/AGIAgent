@@ -1055,9 +1055,36 @@ class MessageSystem:
         self.router = get_global_message_router(self.workspace_root, cleanup_on_init=cleanup_on_init)
     
     def send_message(self, sender_id: str, receiver_id: str, message_type: MessageType, 
-                    content: Dict[str, Any], priority: MessagePriority = MessagePriority.NORMAL) -> bool:
+                    content: Dict[str, Any], priority: MessagePriority = MessagePriority.NORMAL,
+                    requires_response: bool = False) -> bool:
         """Send a message through the system"""
-        return self.router.send_message(sender_id, receiver_id, message_type, content, priority)
+        mailbox = self.router.get_mailbox(sender_id)
+        if not mailbox:
+            mailbox = self.router.register_agent(sender_id)
+            if not mailbox:
+                print_current(f"❌ Failed to register sender agent: {sender_id}")
+                return False
+        
+        message = Message(
+            sender_id=sender_id,
+            receiver_id=receiver_id,
+            message_type=message_type,
+            content=content,
+            priority=priority,
+            requires_response=requires_response
+        )
+        
+        success = mailbox.send_message(message)
+        
+        # 立即处理消息以确保传递
+        if success:
+            try:
+                processed_count = self.router.process_all_messages_once()
+                print_current(f"📬 Routed {processed_count} messages")
+            except Exception as e:
+                print_current(f"⚠️ Error processing messages: {e}")
+        
+        return success
     
     def get_mailbox(self, agent_id: str) -> Optional['Mailbox']:
         """Get mailbox for an agent"""
@@ -1065,11 +1092,11 @@ class MessageSystem:
     
     def create_agent_mailbox(self, agent_id: str) -> 'Mailbox':
         """Create mailbox for an agent"""
-        return self.router.create_agent_mailbox(agent_id)
+        return self.router.register_agent(agent_id)
     
     def get_agent_messages(self, agent_id: str, mark_as_read: bool = False) -> str:
         """Get formatted messages for an agent"""
-        return get_agent_inbox_content(agent_id, self.workspace_root, mark_as_read)
+        return format_inbox_for_llm_context(agent_id, self.workspace_root, mark_as_read=mark_as_read)
 
 
 # Backward compatibility alias
