@@ -4,17 +4,6 @@
   <img src="md/images/main_page_logo.png" alt="AGI Agent Logo" width="600">
 </p>
 
-<p align="center">
-  <a href="https://github.com/agi-hub/AGIAgent"><img src="https://img.shields.io/github/v/release/agi-hub/AGIAgent?include_prereleases&style=for-the-badge&logo=github&logoColor=white&color=181717&label=Releases" alt="GitHub release"></a>
-  <a href="https://agiagentonline.com"><img src="https://img.shields.io/badge/AGIAgent_Online-agiagentonline.com-1E90FF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="AGIAgent Online"></a>
-  <a href="http://colordoc.online"><img src="https://img.shields.io/badge/ColorDoc-colordoc.online-FF6B35?style=for-the-badge&logo=googlechrome&logoColor=white" alt="ColorDoc"></a>
-  <a href="https://github.com/agi-hub/AGIAgent/wiki/AGIAgent-%E6%8A%80%E6%9C%AF%E7%99%BD%E7%9A%AE%E4%B9%A6"><img src="https://img.shields.io/badge/Tech_Whitepaper-Wiki-8A2BE2?style=for-the-badge&logo=gitbook&logoColor=white" alt="Tech Whitepaper Wiki"></a>
-  <a href="https://github.com/user-attachments/files/25679954/AGI.Agent.intro.web.version.pdf"><img src="https://img.shields.io/badge/Intro_Slides-PDF-E63946?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="Intro Slides"></a>
-  <a href="#contact-us"><img src="https://img.shields.io/badge/WeChat-AGI智创机器人-07C160?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChat"></a>
-</p>
-
-
-
 [**中文**](README.md) | **English**
 
 ## 🚀 Project Introduction
@@ -264,15 +253,4 @@ Supports Model Context Protocol (MCP) for communication with external tool serve
 - 🔧 Support for official and third-party MCP servers
 - 📁 File system, GitHub, Slack, and other service integrations
 - ⚡ Dynamic tool discovery and registration
-
-## 🚀 Quick Start
-
-**Experience AGI Agent in Google Colab**
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1JttmqQxV8Yktl4zDmls1819BCnM0_zRE)
-
-*Click the badge above to launch AGI Agent directly in your browser and start experiencing autonomous AI programming.*
-
-## Contact Us
-You can submit questions or suggestions by opening an Issue. For further communication, you can email us at bitcursor@2925.com
 
