@@ -2,7 +2,7 @@
 
 ## 📋 概述
 
-本指南帮助Windows用户在本地项目中设置AGIAgent开发环境。
+本指南帮助 `Windows` 用户在本地项目中设置AGIAgent开发环境。
 
 ## 🚀 快速开始
 
