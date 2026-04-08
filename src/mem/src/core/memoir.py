@@ -34,6 +34,16 @@ from ..utils.exceptions import MemorySystemError
 from ..utils.embedding_cache import get_global_cache_manager
 from ..utils.monitor import monitor_operation
 
+# TF-IDF dependencies (optional, for hybrid search)
+try:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    TfidfVectorizer = None
+    cosine_similarity = None
+
 logger = get_logger(__name__)
 
 
@@ -888,6 +898,14 @@ Please return the summary content directly without any additional formatting:"""
     def _build_tfidf_model(self, summaries: list, ids: list):
         """Build and cache TF-IDF model"""
         try:
+            if not SKLEARN_AVAILABLE:
+                logger.warning("scikit-learn not installed, TF-IDF disabled")
+                self.tfidf_vectorizer = None
+                self.tfidf_matrix = None
+                self.memoir_texts = []
+                self.memoir_ids = []
+                return
+
             if not summaries:
                 self.tfidf_vectorizer = None
                 self.tfidf_matrix = None

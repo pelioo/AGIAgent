@@ -42,11 +42,15 @@ markitdown
 # Windows PDF generation
 pywin32>=306; sys_platform == "win32"
 
- # for multimedia data (can be removed)
- pandas
- openpyxl
- tabulate
- markdown
- pydub
+# for multimedia data (can be removed)
+pandas
+openpyxl
+tabulate
+markdown
+pydub
 
+# Dashboard dependencies
+streamlit>=1.30.0
+plotly>=5.18.0
+pandas>=2.0.0
 
