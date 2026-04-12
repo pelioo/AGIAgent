@@ -4240,7 +4240,22 @@
                 </div>
                 
                 <!-- User Input Modal for talk_to_user - 已删除，改为在聊天窗口中显示选择题 -->
-                
+
+                <!-- @ 文件引用自动补全下拉菜单 -->
+                <div id="mentionDropdown" class="mention-dropdown" style="display: none;">
+                    <div class="mention-dropdown-header">
+                        <i class="fas fa-at"></i>
+                        <span>{{ i18n.get('mention_file_reference', '引用文件或文件夹' if lang == 'zh' else 'Reference File or Folder') }}</span>
+                    </div>
+                    <ul id="mentionList" class="mention-dropdown-list">
+                        <!-- 动态生成（分组显示） -->
+                    </ul>
+                    <div class="mention-dropdown-footer">
+                        <span><kbd>↑</kbd><kbd>↓</kbd> {{ i18n.get('mention_navigate', '导航' if lang == 'zh' else 'Navigate') }}</span>
+                        <span><kbd>Enter</kbd> {{ i18n.get('mention_select', '选择' if lang == 'zh' else 'Select') }}</span>
+                        <span><kbd>Esc</kbd> {{ i18n.get('mention_close', '关闭' if lang == 'zh' else 'Close') }}</span>
+                    </div>
+                </div>
             </div>
             
         </div>
@@ -4535,6 +4550,213 @@
             border-color: var(--color-accent);
             background: var(--bg-primary);
             box-shadow: 0 0 0 1px var(--color-accent);
+        }
+
+        /* ============================================
+           @ 文件引用自动补全下拉菜单样式
+           ============================================ */
+
+        .mention-dropdown {
+            position: absolute;
+            background: var(--bg-secondary, #2d2d30);
+            border: 1px solid var(--border-primary, #3e3e42);
+            border-radius: 6px;
+            max-height: 320px;
+            min-width: 360px;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            z-index: 10000;
+            animation: mentionFadeIn 0.15s ease-out;
+        }
+
+        @keyframes mentionFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mention-dropdown-header {
+            padding: 8px 12px;
+            font-size: 0.8em;
+            color: var(--text-secondary, #9cdcfe);
+            border-bottom: 1px solid var(--border-primary, #3e3e42);
+            background: var(--bg-tertiary, #252526);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mention-dropdown-list {
+            list-style: none;
+            margin: 0;
+            padding: 4px 0;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        /* 分组标题 */
+        .mention-group {
+            margin: 0;
+        }
+
+        .mention-group-header {
+            padding: 6px 12px 4px 12px;
+            font-size: 0.75em;
+            color: var(--text-secondary, #9cdcfe);
+            background: var(--bg-tertiary, #252526);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .mention-group-header:first-child {
+            padding-top: 4px;
+        }
+
+        /* 目录项 */
+        .mention-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.1s ease;
+            font-size: 0.9em;
+        }
+
+        .mention-item:hover,
+        .mention-item.selected {
+            background: var(--bg-directory-item-hover, #2d2d30);
+        }
+
+        .mention-item.selected {
+            background: rgba(0, 122, 204, 0.3);
+        }
+
+        /* 缩进占位元素 */
+        .mention-item-indent {
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .mention-item-icon {
+            width: 20px;
+            text-align: center;
+            color: var(--text-secondary, #9cdcfe);
+            flex-shrink: 0;
+        }
+
+        .mention-item-icon.folder {
+            color: #ffc107;
+        }
+
+        .mention-item-icon.root-folder {
+            color: #4fc3f7;
+        }
+
+        .mention-item-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 层级树形线条 */
+        .tree-lines {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            font-family: monospace;
+            font-size: 0.85em;
+            white-space: pre;
+        }
+
+        .tree-vert-line {
+            color: var(--text-placeholder, #6a6a6a);
+            width: 14px;
+            text-align: center;
+        }
+
+        .tree-branch {
+            color: var(--text-placeholder, #6a6a6a);
+            width: 18px;
+        }
+
+        .mention-item-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-primary, #cccccc);
+            flex-shrink: 0;
+        }
+
+        .mention-item-path {
+            font-size: 0.8em;
+            color: var(--text-placeholder, #6a6a6a);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mention-item-badge {
+            font-size: 0.7em;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background: var(--bg-tertiary, #252526);
+            color: var(--text-placeholder, #6a6a6a);
+            flex-shrink: 0;
+        }
+
+        .mention-dropdown-footer {
+            padding: 6px 12px;
+            font-size: 0.75em;
+            color: var(--text-placeholder, #6a6a6a);
+            border-top: 1px solid var(--border-primary, #3e3e42);
+            background: var(--bg-tertiary, #252526);
+            display: flex;
+            gap: 16px;
+        }
+
+        .mention-dropdown-footer kbd {
+            background: var(--bg-primary, #1e1e1e);
+            border: 1px solid var(--border-primary, #3e3e42);
+            border-radius: 3px;
+            padding: 1px 5px;
+            font-family: inherit;
+            font-size: inherit;
+            color: var(--text-primary, #cccccc);
+        }
+
+        .mention-no-results {
+            padding: 20px 12px;
+            text-align: center;
+            color: var(--text-placeholder, #6a6a6a);
+            font-size: 0.9em;
+        }
+
+        .mention-no-results i {
+            margin-right: 6px;
+        }
+
+        /* 加载状态 */
+        .mention-loading {
+            padding: 16px 12px;
+            text-align: center;
+            color: var(--text-secondary, #9cdcfe);
+            font-size: 0.85em;
+        }
+
+        .mention-loading i {
+            margin-right: 6px;
         }
     </style>
     <!-- 技能选择弹窗 Skill Selection Modal -->
@@ -7884,7 +8106,12 @@
             
             // Save current task's plan_mode state
             currentTaskPlanMode = planMode;
-            
+
+            // 🔧 关闭 @ 引用下拉菜单（如果打开）
+            if (typeof mentionState !== 'undefined' && mentionState.visible) {
+                hideMentionDropdown();
+            }
+
             let message = userInput.value.trim();
             if (isTaskRunning || !socket || !isConnected) return;
 
@@ -8439,7 +8666,7 @@
                 dir_name: dirName
             });
             
-            // Update UI to show selected state, but don't refresh entire list
+            // Update UI to show selected state
             document.querySelectorAll('.directory-item').forEach(item => {
                 item.classList.remove('selected');
             });
@@ -8447,6 +8674,12 @@
             if (selectedItem) {
                 selectedItem.classList.add('selected');
             }
+            
+            // 🔧 修复：切换目录后刷新 @ 引用缓存
+            // 因为 cachedDirectoryTree 的 is_current 需要刷新才能更新
+            setTimeout(function() {
+                refreshMentionCache();
+            }, 100);
             
             // 启动文件监测
             startFileMonitoring();
@@ -9186,7 +9419,12 @@
                     window.attachedFiles = new Map();
                 }
                 window.attachedFiles.set(fileReference, draggedFileInfo.path);
-                
+
+                // 🔧 拖拽插入后，关闭 @ 引用下拉菜单（如果打开）
+                if (typeof mentionState !== 'undefined' && mentionState.visible) {
+                    hideMentionDropdown();
+                }
+
                 resizeTextarea();
                 draggedFileInfo = null;
             }
@@ -9568,6 +9806,12 @@
                         }
                         
                         renderDirectories(data.directories);
+
+                        // 🔧 同步更新 @ 引用功能的文件缓存
+                        window.cachedDirectoryTree = data.directories;
+                        if (typeof refreshMentionCache === 'function') {
+                            refreshMentionCache();
+                        }
 
                         // 恢复滚动位置和展开状态
                         // 🔧 修复：使用requestAnimationFrame确保DOM完全渲染后再恢复状态
@@ -19582,6 +19826,603 @@
                     hideCustomConfigDialog();
                 }
             });
+        });
+
+        // ============================================
+        // @ 文件引用自动补全功能
+        // ============================================
+
+        // 下拉菜单状态
+        let mentionState = {
+            visible: false,
+            query: '',
+            items: [],
+            selectedIndex: 0,
+            triggerPosition: 0,
+            cursorPosition: 0
+        };
+
+        // 缓存目录文件列表（用于快速过滤）
+        let cachedFileList = [];
+
+        // 全局目录树缓存（供 @ 引用功能使用）
+        if (typeof window.cachedDirectoryTree === 'undefined') {
+            window.cachedDirectoryTree = null;
+        }
+
+        // DOM 元素引用
+        let mentionDropdown = null;
+        let mentionList = null;
+        let userInputElement = null;
+
+        // 初始化 @ 引用功能
+        function initMentionFeature() {
+            // 获取 DOM 元素
+            mentionDropdown = document.getElementById('mentionDropdown');
+            mentionList = document.getElementById('mentionList');
+            userInputElement = document.getElementById('userInput');
+
+            if (!mentionDropdown || !mentionList || !userInputElement) {
+                console.warn('[Mention] 必要的 DOM 元素未找到，功能将不会启用');
+                return;
+            }
+
+            // 绑定输入事件
+            userInputElement.addEventListener('input', handleMentionInput);
+            userInputElement.addEventListener('keydown', handleMentionKeydown);
+
+            // 阻止 blur 事件导致下拉菜单立即关闭
+            mentionDropdown.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+            });
+
+            // 点击其他地方关闭下拉菜单
+            document.addEventListener('click', handleDocumentClick);
+
+            console.log('[Mention] 功能初始化完成');
+        }
+
+        // 处理文档点击（关闭下拉菜单）
+        function handleDocumentClick(e) {
+            if (!mentionState.visible) return;
+            if (mentionDropdown && !mentionDropdown.contains(e.target) && e.target !== userInputElement) {
+                hideMentionDropdown();
+            }
+        }
+
+        // 处理输入事件
+        function handleMentionInput(e) {
+            var input = e.target || e.currentTarget;
+            var cursorPos = input.selectionStart;
+            var textBeforeCursor = input.value.substring(0, cursorPos);
+
+            // 检测 @ 触发器
+            // 匹配 @ 后面没有空格和 @ 的文本
+            var atMatch = textBeforeCursor.match(/@([^\s@]*)$/);
+
+            if (atMatch) {
+                // 找到了 @ 触发器
+                var query = atMatch[1];
+                var triggerPos = cursorPos - query.length - 1; // @ 符号的位置
+
+                mentionState.query = query;
+                mentionState.triggerPosition = triggerPos;
+                mentionState.cursorPosition = cursorPos;
+
+                // 过滤文件列表（扁平化结果）
+                var filterResult = filterFilesForMention(query);
+                mentionState.items = filterResult.items;
+                mentionState.selectedIndex = 0;
+
+                // 显示下拉菜单
+                showMentionDropdown(filterResult);
+            } else {
+                // 没有 @ 触发器，隐藏下拉菜单
+                hideMentionDropdown();
+            }
+        }
+
+        // 过滤文件列表（保持树形遍历顺序）
+        function filterFilesForMention(query) {
+            var queryLower = (query || '').toLowerCase();
+            var results = [];
+
+            // 优先从缓存中获取文件列表
+            if (cachedFileList.length === 0) {
+                buildFileCache();
+            }
+
+            // 如果缓存为空，返回空列表
+            if (cachedFileList.length === 0) {
+                return { items: results, totalCount: 0 };
+            }
+
+            // 遍历缓存的文件列表（保持遍历顺序，即树形结构顺序）
+            for (var i = 0; i < cachedFileList.length; i++) {
+                var file = cachedFileList[i];
+                var nameLower = file.name.toLowerCase();
+                var pathLower = (file.path || '').toLowerCase();
+
+                var isMatch = false;
+                var score = 0;
+
+                // 如果没有查询词，显示所有
+                if (!query) {
+                    isMatch = true;
+                    score = 100;  // 无搜索词时保持遍历顺序
+                }
+                // 匹配文件名或路径
+                else if (nameLower.includes(queryLower) || pathLower.includes(queryLower)) {
+                    isMatch = true;
+                    score = calculateMatchScore(file.name, query);
+                }
+
+                if (isMatch) {
+                    // 计算路径深度（用于缩进）
+                    var depth = file.path.split('/').length - 1;
+                    
+                    results.push({
+                        name: file.name,
+                        path: file.path,
+                        type: file.type || 'file',
+                        displayName: file.displayName || '@' + (file.path || file.name),
+                        score: score,
+                        depth: depth
+                    });
+                }
+
+                // 限制结果数量
+                if (results.length >= 50) break;
+            }
+
+            // 🔧 修复：保持原有遍历顺序（树形结构）
+            // 移除了按深度重新排序的逻辑，避免打乱父子关系
+            // 搜索结果保持遍历顺序，只有缩进由 depth 字段决定
+
+            return { items: results, totalCount: results.length };
+        }
+
+        // 构建文件缓存（扁平化收集所有文件和文件夹，不显示根目录）
+        function buildFileCache() {
+            cachedFileList = [];
+
+            // 递归遍历目录结构，扁平化收集所有项
+            function traverse(dirEntry, parentPath) {
+                if (!dirEntry) return;
+                
+                var files = dirEntry.files || dirEntry.children;
+                if (!files || !Array.isArray(files)) return;
+
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    
+                    // 构建完整路径
+                    var fullPath = parentPath ? parentPath + '/' + file.name : file.name;
+                    
+                    // 统一结构：支持 files 和 children 两种属性名
+                    var children = file.children || file.files;
+                    
+                    if (file.type === 'directory' || file.type === 'dir') {
+                        // 添加文件夹（不添加根目录 output_xxx 本身）
+                        cachedFileList.push({
+                            name: file.name,
+                            path: fullPath,
+                            type: 'directory',
+                            displayName: '@' + fullPath + '/'  // 文件夹带 / 后缀
+                        });
+                        
+                        // 递归处理子目录
+                        if (children && children.length > 0) {
+                            traverse(file, fullPath);
+                        }
+                    } else if (file.type === 'file') {
+                        // 添加文件
+                        cachedFileList.push({
+                            name: file.name,
+                            path: fullPath,
+                            type: 'file',
+                            displayName: '@' + fullPath
+                        });
+                    }
+                }
+            }
+
+            // 遍历每个工作区目录（不添加根目录本身）
+            // 🔧 修复：只索引当前选中的目录（selectedDirectory），避免混淆
+            if (typeof window.cachedDirectoryTree !== 'undefined' && window.cachedDirectoryTree && Array.isArray(window.cachedDirectoryTree)) {
+                // 优先使用用户当前选中的目录
+                var targetDirs = [];
+                var currentSelectedDir = typeof selectedDirectory !== 'undefined' ? selectedDirectory : null;
+                
+                // 如果有选中的目录，优先使用它
+                if (currentSelectedDir) {
+                    for (var d = 0; d < window.cachedDirectoryTree.length; d++) {
+                        var dir = window.cachedDirectoryTree[d];
+                        if (dir.name === currentSelectedDir) {
+                            targetDirs.push(dir);
+                            break;
+                        }
+                    }
+                }
+                
+                // 如果没有找到选中的目录（首次加载），使用 is_current 标识
+                if (targetDirs.length === 0) {
+                    for (var d = 0; d < window.cachedDirectoryTree.length; d++) {
+                        var dir = window.cachedDirectoryTree[d];
+                        if (dir.is_current) {
+                            targetDirs.push(dir);
+                            break;
+                        }
+                    }
+                }
+                
+                // 如果还是没有（极少数情况），使用第一个目录
+                if (targetDirs.length === 0 && window.cachedDirectoryTree.length > 0) {
+                    targetDirs.push(window.cachedDirectoryTree[0]);
+                }
+                
+                // 遍历目标目录
+                for (var t = 0; t < targetDirs.length; t++) {
+                    var currentDir = targetDirs[t];
+                    
+                    // 从 workspace 目录开始遍历（跳过 output_xxx 根目录本身）
+                    var workspaceDir = {
+                        name: currentDir.name,
+                        type: 'directory',
+                        files: currentDir.files
+                    };
+                    
+                    traverse(workspaceDir, '');
+                }
+                
+                // 记录当前索引的是哪个目录（便于调试）
+                if (targetDirs.length > 0) {
+                    console.log('[Mention] 当前索引目录: ' + targetDirs[0].name + ' (selectedDirectory=' + currentSelectedDir + ')');
+                }
+            }
+
+            // 如果缓存为空，尝试从 DOM 收集（备选方案）
+            if (cachedFileList.length === 0) {
+                var allFileItems = document.querySelectorAll('.file-item');
+                for (var j = 0; j < allFileItems.length; j++) {
+                    var item = allFileItems[j];
+                    var nameEl = item.querySelector('.file-name');
+                    var name = nameEl ? nameEl.textContent : item.textContent;
+                    var isDir = item.classList.contains('directory');
+                    var path = name.trim();
+                    cachedFileList.push({
+                        name: path,
+                        path: path,
+                        type: isDir ? 'directory' : 'file',
+                        displayName: '@' + path + (isDir ? '/' : '')
+                    });
+                }
+            }
+
+            console.log('[Mention] 文件缓存已构建，共 ' + cachedFileList.length + ' 个项');
+        }
+
+        // 计算匹配分数（用于排序）
+        function calculateMatchScore(fileName, query) {
+            var nameLower = fileName.toLowerCase();
+            var queryLower = query.toLowerCase();
+
+            // 精确前缀匹配得分最高
+            if (nameLower.indexOf(queryLower) === 0) return 100;
+
+            // 名称开头匹配
+            if (nameLower.startsWith(queryLower)) return 90;
+
+            // 路径前缀匹配
+            if (nameLower.indexOf('/' + queryLower) !== -1 || nameLower.indexOf('\\' + queryLower) !== -1) return 70;
+
+            // 包含匹配
+            if (nameLower.includes(queryLower)) return 50;
+
+            return 10;
+        }
+
+        // 刷新文件缓存
+        function refreshMentionCache() {
+            cachedFileList = [];
+            buildFileCache();
+        }
+
+        // 显示下拉菜单（扁平化显示，所有项统一列表）
+        function showMentionDropdown(filterResult) {
+            if (!mentionDropdown || !mentionList) return;
+
+            var items = filterResult.items || [];
+            var totalCount = filterResult.totalCount || items.length;
+
+            // 清空列表
+            mentionList.innerHTML = '';
+
+            if (totalCount === 0) {
+                // 无匹配结果
+                mentionList.innerHTML = '<li class="mention-no-results"><i class="fas fa-search"></i> 未找到匹配文件或文件夹</li>';
+            } else {
+                // 扁平化渲染所有项
+                for (var i = 0; i < items.length; i++) {
+                    var item = items[i];
+                    var li = createMentionItem(item, i);
+                    mentionList.appendChild(li);
+                }
+            }
+
+            // 重置选中索引
+            mentionState.selectedIndex = 0;
+
+            // 定位下拉菜单
+            positionMentionDropdown();
+
+            // 显示
+            mentionDropdown.style.display = 'block';
+            mentionState.visible = true;
+
+            // 滚动到选中项
+            scrollToSelectedMentionItem();
+        }
+
+        // 创建单个 Mention 项（带缩进和层级线条的树形显示）
+        function createMentionItem(item, index) {
+            var li = document.createElement('li');
+            li.className = 'mention-item' + (index === mentionState.selectedIndex ? ' selected' : '');
+            li.dataset.index = index;
+
+            var isFolder = item.type === 'directory';
+            var iconClass = getFileIconClass(item.name);
+            
+            // 文件夹图标特殊处理：folder 类放在外层 span，图标本身用 fas fa-folder
+            var iconSpanClass = 'mention-item-icon';
+            if (isFolder) {
+                iconSpanClass += ' folder';
+                iconClass = 'fas fa-folder';
+            }
+
+            // 计算缩进深度
+            var pathParts = item.path.split('/');
+            var depth = Math.max(0, pathParts.length - 1); // 根目录深度为 0
+
+            // 构建层级线条
+            var treeLines = '';
+            if (depth > 0) {
+                // 生成前置的垂直线 │ 和缩进空格
+                for (var d = 0; d < depth - 1; d++) {
+                    treeLines += '<span class="tree-vert-line">│ </span>';
+                }
+                // 当前层的连接线（统一使用 ├─，简化处理）
+                treeLines += '<span class="tree-branch">├─</span>';
+            }
+
+            li.innerHTML = '<span class="' + iconSpanClass + '"><i class="' + iconClass + '"></i></span>' +
+                '<div class="mention-item-content">' +
+                '<span class="tree-lines">' + treeLines + '</span>' +
+                '<span class="mention-item-name">' + escapeHtml(item.name) + (isFolder ? '/' : '') + '</span>' +
+                '</div>';
+
+            // 点击选择
+            li.addEventListener('click', (function(idx) {
+                return function() {
+                    selectMentionItem(idx);
+                };
+            })(index));
+
+            return li;
+        }
+
+        // 隐藏下拉菜单
+        function hideMentionDropdown() {
+            if (!mentionDropdown) return;
+
+            mentionDropdown.style.display = 'none';
+            mentionState.visible = false;
+            mentionState.items = [];
+            mentionState.selectedIndex = 0;
+        }
+
+        // 定位下拉菜单
+        function positionMentionDropdown() {
+            if (!mentionDropdown || !userInputElement) return;
+
+            var inputRect = userInputElement.getBoundingClientRect();
+            var viewportHeight = window.innerHeight;
+
+            // 优先显示在输入框下方
+            var top = inputRect.bottom + window.scrollY + 4;
+
+            // 如果下方空间不够，显示在上方
+            var dropdownHeight = 320;
+            if (top + dropdownHeight > viewportHeight + window.scrollY) {
+                top = inputRect.top + window.scrollY - dropdownHeight - 4;
+            }
+
+            // 设置位置
+            mentionDropdown.style.top = top + 'px';
+            mentionDropdown.style.left = inputRect.left + window.scrollX + 'px';
+            mentionDropdown.style.width = Math.max(inputRect.width, 360) + 'px';
+        }
+
+        // 滚动到选中项
+        function scrollToSelectedMentionItem() {
+            var selected = mentionList.querySelector('.mention-item.selected');
+            if (selected) {
+                selected.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        // 处理键盘事件
+        function handleMentionKeydown(e) {
+            if (!mentionState.visible || mentionState.items.length === 0) {
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mentionState.selectedIndex = Math.min(
+                        mentionState.selectedIndex + 1,
+                        mentionState.items.length - 1
+                    );
+                    updateMentionSelection();
+                    break;
+
+                case 'ArrowUp':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mentionState.selectedIndex = Math.max(
+                        mentionState.selectedIndex - 1,
+                        0
+                    );
+                    updateMentionSelection();
+                    break;
+
+                case 'Enter':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectMentionItem(mentionState.selectedIndex);
+                    break;
+
+                case 'Escape':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    hideMentionDropdown();
+                    break;
+
+                case 'Tab':
+                    // Tab 也选择当前项
+                    if (mentionState.visible) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectMentionItem(mentionState.selectedIndex);
+                    }
+                    break;
+            }
+        }
+
+        // 更新选中状态
+        function updateMentionSelection() {
+            var items = mentionList.querySelectorAll('.mention-item');
+            for (var i = 0; i < items.length; i++) {
+                items[i].classList.toggle('selected', i === mentionState.selectedIndex);
+            }
+            scrollToSelectedMentionItem();
+        }
+
+        // 选择文件项
+        function selectMentionItem(index) {
+            if (index < 0 || index >= mentionState.items.length) return;
+
+            var item = mentionState.items[index];
+
+            // 在输入框中替换 @query 为完整的文件引用
+            replaceMentionText(item.displayName);
+
+            // 存储文件路径到 attachedFiles
+            if (typeof window.attachedFiles === 'undefined') {
+                window.attachedFiles = new Map();
+            }
+            window.attachedFiles.set(item.displayName, item.path);
+
+            // 隐藏下拉菜单
+            hideMentionDropdown();
+
+            // 触发输入框 resize 事件
+            if (userInputElement) {
+                userInputElement.dispatchEvent(new Event('input'));
+            }
+
+            console.log('[Mention] 已选择文件: ' + item.displayName);
+        }
+
+        // 替换 @ 触发器文本
+        function replaceMentionText(newText) {
+            var input = userInputElement;
+            var value = input.value;
+
+            // 获取 @ 符号的位置和范围
+            var triggerStart = mentionState.triggerPosition;
+            var triggerEnd = mentionState.cursorPosition;
+
+            // 保留 @ 前的空格（如果有）
+            var textBefore = value.substring(0, triggerStart);
+            var needsSpaceBefore = textBefore.length > 0 &&
+                textBefore.charAt(textBefore.length - 1) !== ' ' &&
+                textBefore.charAt(textBefore.length - 1) !== '\n';
+
+            // 保留触发器后的空格（如果有）
+            var textAfter = value.substring(triggerEnd);
+            var needsSpaceAfter = textAfter.length > 0 &&
+                textAfter.charAt(0) !== ' ' &&
+                textAfter.charAt(0) !== '\n';
+
+            // 构造新文本
+            var spaceBefore = needsSpaceBefore ? ' ' : '';
+            var spaceAfter = needsSpaceAfter ? ' ' : '';
+            var replacement = spaceBefore + newText + spaceAfter;
+
+            // 替换
+            input.value = value.substring(0, triggerStart) + replacement + textAfter;
+
+            // 设置光标位置（在新文本之后）
+            var newCursorPos = triggerStart + replacement.length;
+            input.setSelectionRange(newCursorPos, newCursorPos);
+
+            // 聚焦输入框
+            input.focus();
+        }
+
+        // 获取文件图标类
+        function getFileIconClass(fileName) {
+            var ext = (fileName.split('.').pop() || '').toLowerCase();
+            var iconMap = {
+                'js': 'fab fa-js',
+                'ts': 'fab fa-js-square',
+                'jsx': 'fab fa-react',
+                'tsx': 'fab fa-react',
+                'py': 'fab fa-python',
+                'html': 'fab fa-html5',
+                'css': 'fab fa-css3-alt',
+                'json': 'fas fa-file-code',
+                'md': 'fas fa-file-alt',
+                'txt': 'fas fa-file-alt',
+                'pdf': 'fas fa-file-pdf',
+                'png': 'fas fa-file-image',
+                'jpg': 'fas fa-file-image',
+                'jpeg': 'fas fa-file-image',
+                'gif': 'fas fa-file-image',
+                'svg': 'fas fa-file-code',
+                'csv': 'fas fa-file-csv',
+                'xml': 'fas fa-file-code',
+                'yaml': 'fas fa-file-code',
+                'yml': 'fas fa-file-code',
+                'doc': 'fas fa-file-word',
+                'docx': 'fas fa-file-word',
+                'xls': 'fas fa-file-excel',
+                'xlsx': 'fas fa-file-excel',
+                'zip': 'fas fa-file-archive',
+                'rar': 'fas fa-file-archive'
+            };
+            return iconMap[ext] || 'fas fa-file';
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 将函数暴露到全局
+        window.refreshMentionCache = refreshMentionCache;
+
+        // 页面加载完成后初始化 @ 引用功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 延迟初始化，确保 DOM 完全加载
+            setTimeout(function() {
+                initMentionFeature();
+            }, 500);
         });
 
     </script>
