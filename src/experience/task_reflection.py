@@ -18,7 +18,7 @@ limitations under the License.
 
 """
 任务反思脚本
-分析任务日志，使用LLM进行深度反思，生成skill文件
+分析任务日志，使用LLM进行深度反思，生成experience文件
 """
 
 import os
@@ -49,7 +49,7 @@ from src.config_loader import (
     get_gui_default_data_directory
 )
 from src.tools.print_system import print_current, print_error, print_system
-from .skill_tools import SkillTools
+from .experience_tools import ExperienceTools
 
 
 class TaskReflection:
@@ -100,7 +100,7 @@ class TaskReflection:
                     self.llm_client = OpenAI(api_key=self.api_key, base_url=self.api_base)
         
         # 初始化skill工具
-        self.skill_tools = SkillTools(workspace_root=self.root_dir)
+        self.experience_tools = ExperienceTools(workspace_root=self.root_dir)
         
         # 设置日志
         self.logger = self._setup_logger()
@@ -123,8 +123,8 @@ class TaskReflection:
         logger.setLevel(logging.INFO)
         
         # 创建日志目录
-        if self.skill_tools.experience_dir:
-            log_dir = os.path.join(self.skill_tools.experience_dir, "logs")
+        if self.experience_tools.experience_dir:
+            log_dir = os.path.join(self.experience_tools.experience_dir, "logs")
             os.makedirs(log_dir, exist_ok=True)
             
             # 日志文件
@@ -400,7 +400,7 @@ class TaskReflection:
    - 如果任务多次失败后成功，简要说明：失败的主要原因（关键点）和最终成功的策略（核心方法）
 4. 最短成功路径：需描述清楚，或说明不存在明显优化空间
 5. 用户偏好：简要总结
-6. Skill使用条件：清晰描述何时以及什么情况下应该使用这个skill（例如："当用户想要使用自定义工具玩类似五子棋的游戏并尝试获胜时"、"当处理需要多次迭代才能成功的任务时"等，要具体明确）
+6. Experience使用条件：清晰描述何时以及什么情况下应该使用这个experience（例如："当用户想要使用自定义工具玩类似五子棋的游戏并尝试获胜时"、"当处理需要多次迭代才能成功的任务时"等，要具体明确）
 7. 需要备份的文件：列出文件路径（只包括代码文件如.py、.js、.ts、.java等和文档文件如.md、.txt等，不包括配置文件如.json、.yaml等和图片文件）
 
 **要求：**
@@ -409,7 +409,7 @@ class TaskReflection:
 - 失败和成功的迭代过程只描述一次，要简洁
 - 重点突出核心洞察和经验教训
 - 不要重复列举每次失败
-- Skill使用条件要具体明确，能够帮助系统准确判断何时应该使用这个skill
+- Experience使用条件要具体明确，能够帮助系统准确判断何时应该使用这个experience
 
 **输出格式：**
 - 使用中文自然语言格式
@@ -417,7 +417,7 @@ class TaskReflection:
 - 不要包含标题"任务执行反思分析"或类似的结构化标题（如"## Task Overview"等）
 - 在最后单独列出：
   1. 需要备份的文件路径（每行一个，以"FILES_TO_BACKUP:"开头）
-  2. Skill使用条件（单独一行，以"USAGE_CONDITIONS:"开头）
+  2. Experience使用条件（单独一行，以"USAGE_CONDITIONS:"开头）
 
 请直接开始分析，使用中文输出。"""
 
@@ -449,7 +449,7 @@ class TaskReflection:
 - 内容要简洁，突出核心洞察
 - 如果涉及游戏，提取游戏类型和规则
 - 如果多次失败后成功，简要说明失败原因和成功策略（不要重复列举每次失败）
-- **重要：请总结skill的使用条件，描述在什么情况下应该使用这个skill（要具体明确，能够帮助系统准确判断）**
+- **重要：请总结skill的使用条件，描述在什么情况下应该使用这个experience（要具体明确，能够帮助系统准确判断）**
 
 请进行简洁的深度反思分析。"""
         
@@ -537,14 +537,14 @@ class TaskReflection:
                 'usage_conditions': None
             }
     
-    def _backup_files(self, output_dir: str, files_to_backup: List[str], skill_id: str) -> List[str]:
+    def _backup_files(self, output_dir: str, files_to_backup: List[str], experience_id: str) -> List[str]:
         """
         备份文件到skill代码目录
         
         Args:
             output_dir: 任务输出目录
             files_to_backup: 要备份的文件路径列表（相对于workspace）
-            skill_id: skill ID
+            experience_id: Experience ID
             
         Returns:
             成功备份的文件列表
@@ -574,9 +574,9 @@ class TaskReflection:
                 if ext not in code_exts and ext not in doc_exts:
                     continue
                 
-                # 使用copy_skill_files工具备份
+                # 使用copy_experience_files工具备份
                 rel_path = os.path.relpath(src_path, workspace_dir)
-                result = self.skill_tools.copy_skill_files(skill_id, [rel_path])
+                result = self.experience_tools.copy_experience_files(experience_id, [rel_path])
                 if result.get('status') == 'success':
                     copied_files.extend(result.get('copied_files', []))
             
@@ -585,23 +585,23 @@ class TaskReflection:
         
         return copied_files
     
-    def _generate_skill(self, task_info: Dict[str, Any], reflection_result: Dict[str, Any]) -> Optional[str]:
+    def _generate_experience(self, task_info: Dict[str, Any], reflection_result: Dict[str, Any]) -> Optional[str]:
         """
-        生成skill文件
+        生成experience文件
         
         Args:
             task_info: 任务信息
             reflection_result: 反思结果
             
         Returns:
-            生成的skill文件路径
+            生成的experience文件路径
         """
-        if not self.skill_tools.experience_dir:
+        if not self.experience_tools.experience_dir:
             return None
         
         try:
-            # 生成skill_id（使用时间戳）
-            skill_id = str(int(time.time()))
+            # 生成experience_id（使用时间戳）
+            experience_id = str(int(time.time()))
             
             # 从反思内容中提取标题（使用第一行或前50个字符）
             reflection = reflection_result.get('reflection', '')
@@ -610,15 +610,15 @@ class TaskReflection:
                 title = f"Task from {os.path.basename(task_info['output_dir'])}"
             
             # 生成文件名
-            safe_title = self.skill_tools._sanitize_filename(title)
-            skill_filename = f"skill_{safe_title}.md"
-            skill_file_path = os.path.join(self.skill_tools.experience_dir, skill_filename)
+            safe_title = self.experience_tools._sanitize_filename(title)
+            experience_filename = f"experience_{safe_title}.md"
+            experience_file_path = os.path.join(self.experience_tools.experience_dir, experience_filename)
             
             # 如果文件已存在，添加时间戳
-            if os.path.exists(skill_file_path):
-                name, ext = os.path.splitext(skill_filename)
-                skill_filename = f"{name}_{skill_id}{ext}"
-                skill_file_path = os.path.join(self.skill_tools.experience_dir, skill_filename)
+            if os.path.exists(experience_file_path):
+                name, ext = os.path.splitext(experience_filename)
+                experience_filename = f"{name}_{experience_id}{ext}"
+                experience_file_path = os.path.join(self.experience_tools.experience_dir, experience_filename)
             
             # 构建front matter
             user_requirements = task_info.get('user_requirements', [])
@@ -633,7 +633,7 @@ class TaskReflection:
                     usage_conditions_text = f"当需要完成类似任务时使用：{usage_conditions_text}"
             
             front_matter = {
-                'skill_id': skill_id,
+                'experience_id': experience_id,
                 'title': title,
                 'usage_conditions': usage_conditions_text,
                 'quality_index': 0.5,
@@ -651,22 +651,22 @@ class TaskReflection:
                 # 简单提取，可以后续改进
                 front_matter['user_preferences'] = "从反思中提取的用户偏好信息"
             
-            # 保存skill文件
-            self.skill_tools._save_skill_file(skill_file_path, front_matter, reflection)
+            # 保存experience文件
+            self.experience_tools._save_experience_file(experience_file_path, front_matter, reflection)
             
             # 备份文件
             files_to_backup = reflection_result.get('files_to_backup', [])
             if files_to_backup:
-                copied_files = self._backup_files(task_info['output_dir'], files_to_backup, skill_id)
+                copied_files = self._backup_files(task_info['output_dir'], files_to_backup, experience_id)
                 if copied_files:
                     # 更新related_code
                     front_matter['related_code'] = ', '.join(copied_files)
-                    self.skill_tools._save_skill_file(skill_file_path, front_matter, reflection)
+                    self.experience_tools._save_experience_file(experience_file_path, front_matter, reflection)
             
-            return skill_file_path
+            return experience_file_path
         
         except Exception as e:
-            self.logger.error(f"Error generating skill: {e}")
+            self.logger.error(f"Error generating experience: {e}")
             return None
     
     def process_task(self, output_dir: str) -> bool:
@@ -719,15 +719,15 @@ class TaskReflection:
             # LLM反思
             reflection_result = self._call_llm_reflection(task_info)
             
-            # 生成skill文件
-            skill_file = self._generate_skill(task_info, reflection_result)
+            # 生成experience文件
+            experience_file = self._generate_experience(task_info, reflection_result)
             
-            if skill_file:
-                self.logger.info(f"Skill file generated: {skill_file}")
-                print_current(f"✅ Skill generated: {skill_file}")
+            if experience_file:
+                self.logger.info(f"Experience file generated: {experience_file}")
+                print_current(f"✅ Experience generated: {experience_file}")
                 return True
             else:
-                self.logger.error("Failed to generate skill file")
+                self.logger.error("Failed to generate experience file")
                 return False
         
         except Exception as e:
@@ -763,7 +763,7 @@ class TaskReflection:
 
 def main():
     """主函数"""
-    parser = argparse.ArgumentParser(description='Task reflection script for skill generation')
+    parser = argparse.ArgumentParser(description='Task reflection script for experience generation')
     parser.add_argument('--root-dir', type=str, help='Root directory for data (overrides config)')
     parser.add_argument('--config', type=str, default='config/config.txt', help='Config file path')
     

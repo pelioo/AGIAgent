@@ -17,12 +17,12 @@ limitations under the License.
 """
 
 """
-Skill管理与经验总结系统模块
+Experience管理与经验总结系统模块
 """
 
-from .skill_tools import SkillTools
+from .experience_tools import ExperienceTools
 
-__all__ = ['SkillTools']
+__all__ = ['ExperienceTools']
 
 
 

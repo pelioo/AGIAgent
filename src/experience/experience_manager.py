@@ -17,8 +17,8 @@ limitations under the License.
 """
 
 """
-Skill整理脚本
-合并相似skill，清理无用skill，跨skill整合
+Experience整理脚本
+合并相似experience，清理无用experience，跨experience整合
 """
 
 import os
@@ -56,11 +56,11 @@ from src.config_loader import (
     get_gui_default_data_directory
 )
 from src.tools.print_system import print_current, print_error, print_system
-from .skill_tools import SkillTools
+from .experience_tools import ExperienceTools
 
 
-class SkillManager:
-    """Skill整理管理器"""
+class ExperienceManager:
+    """Experience整理管理器"""
     
     def __init__(self, root_dir: Optional[str] = None, config_file: str = "config/config.txt"):
         """
@@ -121,7 +121,7 @@ class SkillManager:
                     self.logger.warning(f"Failed to initialize OpenAI-compatible client: {e}")
         
         # 初始化skill工具
-        self.skill_tools = SkillTools(workspace_root=self.root_dir)
+        self.experience_tools = ExperienceTools(workspace_root=self.root_dir)
         
         # 设置日志
         self.logger = self._setup_logger()
@@ -143,14 +143,14 @@ class SkillManager:
     
     def _setup_logger(self) -> logging.Logger:
         """设置日志记录器"""
-        logger = logging.getLogger('skill_manager')
+        logger = logging.getLogger('experience_manager')
         logger.setLevel(logging.INFO)
         
-        if self.skill_tools.experience_dir:
-            log_dir = os.path.join(self.skill_tools.experience_dir, "logs")
+        if self.experience_tools.experience_dir:
+            log_dir = os.path.join(self.experience_tools.experience_dir, "logs")
             os.makedirs(log_dir, exist_ok=True)
             
-            log_file = os.path.join(log_dir, f"skill_manager_{datetime.now().strftime('%Y%m%d')}.log")
+            log_file = os.path.join(log_dir, f"experience_manager_{datetime.now().strftime('%Y%m%d')}.log")
             
             file_handler = logging.FileHandler(log_file, encoding='utf-8')
             file_handler.setLevel(logging.INFO)
@@ -167,27 +167,27 @@ class SkillManager:
         
         return logger
     
-    def _load_all_skills(self) -> List[Tuple[str, Dict[str, Any]]]:
+    def _load_all_experiences(self) -> List[Tuple[str, Dict[str, Any]]]:
         """
         加载所有skill文件
         
         Returns:
             [(文件路径, skill数据), ...] 列表
         """
-        if not self.skill_tools.experience_dir:
+        if not self.experience_tools.experience_dir:
             return []
         
-        skills = []
-        for filename in os.listdir(self.skill_tools.experience_dir):
-            if filename.startswith('skill_') and filename.endswith('.md'):
-                file_path = os.path.join(self.skill_tools.experience_dir, filename)
+        experiences = []
+        for filename in os.listdir(self.experience_tools.experience_dir):
+            if filename.startswith('experience_') and filename.endswith('.md'):
+                file_path = os.path.join(self.experience_tools.experience_dir, filename)
                 try:
-                    skill_data = self.skill_tools._load_skill_file(file_path)
-                    if skill_data:
-                        skills.append((file_path, skill_data))
+                    experience_data = self.experience_tools._load_experience_file(file_path)
+                    if experience_data:
+                        experiences.append((file_path, experience_data))
                 except Exception as e:
-                    self.logger.error(f"Error loading skill file {file_path}: {e}")
-                    print_error(f"Error loading skill file {file_path}: {e}, skipping...")
+                    self.logger.error(f"Error loading experience file {file_path}: {e}")
+                    print_error(f"Error loading experience file {file_path}: {e}, skipping...")
         
         return skills
     
@@ -205,18 +205,18 @@ class SkillManager:
             return [], []
         
         texts = []
-        skill_ids = []
+        experience_ids = []
         
-        for file_path, skill_data in skills:
-            front_matter = skill_data['front_matter']
-            content = skill_data['content']
+        for file_path, experience_data in experiences:
+            front_matter = experience_data['front_matter']
+            content = experience_data['content']
             
             title = front_matter.get('title', '')
             usage_conditions = front_matter.get('usage_conditions', '')
             combined_text = f"{title} {usage_conditions} {content}"
             
             texts.append(combined_text)
-            skill_ids.append(str(front_matter.get('skill_id', '')))
+            experience_ids.append(str(front_matter.get('experience_id', '')))
         
         if not texts:
             return [], []
@@ -226,12 +226,12 @@ class SkillManager:
             tfidf_matrix = vectorizer.fit_transform(texts)
             similarity_matrix = cosine_similarity(tfidf_matrix)
             
-            return similarity_matrix.tolist(), skill_ids
+            return similarity_matrix.tolist(), experience_ids
         except Exception as e:
             self.logger.error(f"Error calculating similarity matrix: {e}")
             return [], []
     
-    def _merge_similar_skills(self, skills: List[Tuple[str, Dict[str, Any]]]) -> int:
+    def _merge_similar_experiences(self, skills: List[Tuple[str, Dict[str, Any]]]) -> int:
         """
         合并相似度高的skill
         
@@ -248,7 +248,7 @@ class SkillManager:
         if len(skills) < 2:
             return 0
         
-        similarity_matrix, skill_ids = self._calculate_similarity_matrix(skills)
+        similarity_matrix, experience_ids = self._calculate_similarity_matrix(skills)
         if not similarity_matrix:
             return 0
         
@@ -256,8 +256,8 @@ class SkillManager:
         processed = set()
         
         # 创建skill_id到索引的映射
-        skill_id_to_idx = {sid: idx for idx, sid in enumerate(skill_ids)}
-        idx_to_skill = {idx: skill for idx, skill in enumerate(skills)}
+        experience_id_to_idx = {sid: idx for idx, sid in enumerate(experience_ids)}
+        idx_to_experience = {idx: experience for idx, experience in enumerate(experiences)}
         
         for i in range(len(skills)):
             if i in processed:
@@ -277,21 +277,21 @@ class SkillManager:
                 continue
             
             # 合并skill
-            main_skill = skills[i]
-            main_front_matter = main_skill[1]['front_matter']
-            main_content = main_skill[1]['content']
+            main_experience = skills[i]
+            main_front_matter = main_experience[1]['front_matter']
+            main_content = main_experience[1]['content']
             main_quality = main_front_matter.get('quality_index', 0.5)
             
             # 找到质量指数最高的作为主skill
             for idx in similar_indices:
-                other_skill = skills[idx]
-                other_front_matter = other_skill[1]['front_matter']
+                other_experience = skills[idx]
+                other_front_matter = other_experience[1]['front_matter']
                 other_quality = other_front_matter.get('quality_index', 0.5)
                 
                 if other_quality > main_quality:
-                    main_skill = other_skill
+                    main_experience = other_experience
                     main_front_matter = other_front_matter
-                    main_content = other_skill[1]['content']
+                    main_content = other_experience[1]['content']
                     main_quality = other_quality
             
             # 合并内容
@@ -300,9 +300,9 @@ class SkillManager:
             merged_fetch_count = main_front_matter.get('fetch_count', 0)
             
             for idx in similar_indices:
-                other_skill = skills[idx]
-                other_front_matter = other_skill[1]['front_matter']
-                other_content = other_skill[1]['content']
+                other_experience = skills[idx]
+                other_front_matter = other_experience[1]['front_matter']
+                other_content = other_experience[1]['content']
                 
                 # 合并内容
                 if other_content not in merged_content:
@@ -318,8 +318,8 @@ class SkillManager:
                 merged_fetch_count += other_front_matter.get('fetch_count', 0)
                 
                 # 删除其他skill（移动到legacy）
-                other_skill_id = str(other_front_matter.get('skill_id', ''))
-                result = self.skill_tools.delete_skill(other_skill_id)
+                other_experience_id = str(other_front_matter.get('experience_id', ''))
+                result = self.experience_tools.delete_experience(other_experience_id)
                 if result.get('status') == 'success':
                     merged_count += 1
                     processed.add(idx)
@@ -338,12 +338,12 @@ class SkillManager:
                 avg_quality = sum(qualities) / len(qualities)
                 main_front_matter['quality_index'] = round(avg_quality, 3)
             
-            self.skill_tools._save_skill_file(main_skill[0], main_front_matter, merged_content)
+            self.experience_tools._save_experience_file(main_experience[0], main_front_matter, merged_content)
             processed.add(i)
         
         return merged_count
     
-    def _cluster_skills_with_dbscan(self, skills: List[Tuple[str, Dict[str, Any]]]) -> Dict[int, List[int]]:
+    def _cluster_experiences_with_dbscan(self, skills: List[Tuple[str, Dict[str, Any]]]) -> Dict[int, List[int]]:
         """
         使用DBSCAN对skill进行聚类
         
@@ -359,7 +359,7 @@ class SkillManager:
         if len(skills) < 2:
             return {}
         
-        similarity_matrix, skill_ids = self._calculate_similarity_matrix(skills)
+        similarity_matrix, experience_ids = self._calculate_similarity_matrix(skills)
         if not similarity_matrix:
             return {}
         
@@ -392,12 +392,12 @@ class SkillManager:
             self.logger.error(f"Error in DBSCAN clustering: {e}")
             return {}
     
-    def _call_llm_for_merge_decision(self, skill_group: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _call_llm_for_merge_decision(self, experience_group: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         调用LLM决定是否合并skill组
         
         Args:
-            skill_group: skill组列表
+            experience_group: skill组列表
             
         Returns:
             LLM决策结果，包含是否合并和合并后的内容
@@ -408,14 +408,14 @@ class SkillManager:
                 'reason': 'LLM client not available'
             }
         
-        if len(skill_group) < 2:
+        if len(experience_group) < 2:
             return {
                 'should_merge': False,
-                'reason': 'Not enough skills to merge'
+                'reason': 'Not enough experiences to merge'
             }
         
         # 构建提示
-        system_prompt = """你是一个skill整合专家。请分析以下一组相关的skill，决定是否应该将它们合并成一个更高级的综合skill。
+        system_prompt = """你是一个experience整合专家。请分析以下一组相关的skill，决定是否应该将它们合并成一个更高级的综合skill。
 
 如果这些skill可以整合成一个更有价值的综合skill，请：
 1. 决定是否合并（输出"MERGE: yes"或"MERGE: no"）
@@ -425,27 +425,27 @@ class SkillManager:
 输出格式：
 MERGE: yes/no
 REASON: 合并理由
-TITLE: 新skill标题
-USAGE_CONDITIONS: 新skill使用条件
+TITLE: 新experience标题
+USAGE_CONDITIONS: 新experience使用条件
 CONTENT: 合并后的详细内容"""
 
-        skill_descriptions = []
-        for i, skill in enumerate(skill_group, 1):
-            front_matter = skill['front_matter']
-            skill_descriptions.append(f"""
-Skill {i}:
-- ID: {front_matter.get('skill_id')}
+        experience_descriptions = []
+        for i, experience in enumerate(experience_group, 1):
+            front_matter = experience['front_matter']
+            experience_descriptions.append(f"""
+Experience {i}:
+- ID: {front_matter.get('experience_id')}
 - Title: {front_matter.get('title')}
 - Usage Conditions: {front_matter.get('usage_conditions')}
 - Quality Index: {front_matter.get('quality_index')}
-- Content: {skill['content'][:500]}...
+- Content: {experience['content'][:500]}...
 """)
         
-        user_prompt = f"""请分析以下{len(skill_group)}个相关的skill：
+        user_prompt = f"""请分析以下{len(experience_group)}个相关的experience：
 
-{''.join(skill_descriptions)}
+{''.join(experience_descriptions)}
 
-请决定是否应该将它们合并成一个综合skill。"""
+请决定是否应该将它们合并成一个综合experience。"""
         
         try:
             if self.is_claude:
@@ -513,7 +513,7 @@ Skill {i}:
                     'reason': f'Error in LLM call: {str(e)}'
                 }
     
-    def _clean_unused_skills(self, skills: List[Tuple[str, Dict[str, Any]]]) -> int:
+    def _clean_unused_experiences(self, skills: List[Tuple[str, Dict[str, Any]]]) -> int:
         """
         清理长期不使用的skill
         
@@ -526,8 +526,8 @@ Skill {i}:
         cleaned_count = 0
         cutoff_date = datetime.now() - timedelta(days=30)
         
-        for file_path, skill_data in skills:
-            front_matter = skill_data['front_matter']
+        for file_path, experience_data in experiences:
+            front_matter = experience_data['front_matter']
             fetch_count = front_matter.get('fetch_count', 0)
             created_at_str = front_matter.get('created_at', '')
             
@@ -535,11 +535,11 @@ Skill {i}:
                 try:
                     created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
                     if created_at < cutoff_date:
-                        skill_id = str(front_matter.get('skill_id', ''))
-                        result = self.skill_tools.delete_skill(skill_id)
+                        skill_id = str(front_matter.get('experience_id', ''))
+                        result = self.experience_tools.delete_experience(experience_id)
                         if result.get('status') == 'success':
                             cleaned_count += 1
-                            self.logger.info(f"Cleaned unused skill: {skill_id}")
+                            self.logger.info(f"Cleaned unused experience: {experience_id}")
                 except Exception:
                     pass
         
@@ -547,11 +547,11 @@ Skill {i}:
     
     def run(self):
         """运行skill整理流程"""
-        self.logger.info("Starting skill management process")
-        print_system("Starting skill management process")
+        self.logger.info("Starting experience management process")
+        print_system("Starting experience management process")
         
         # 加载所有skill
-        skills = self._load_all_skills()
+        experiences = self._load_all_experiences()
         
         if not skills:
             self.logger.info("No skills found")
@@ -568,16 +568,16 @@ Skill {i}:
         print_current(f"✅ Merged {merged_count} similar skills")
         
         # 重新加载skill（因为可能有变化）
-        skills = self._load_all_skills()
+        experiences = self._load_all_experiences()
         
         # 2. DBSCAN聚类和跨skill整合
         if SKLEARN_AVAILABLE and len(skills) >= 2:
-            print_current("Step 2: Cross-skill integration...")
+            print_current("Step 2: Cross-experience integration...")
             
             # 检查LLM是否可用
             if not self.llm_client:
-                print_current("⚠️  LLM client not available, skipping cross-skill integration. Please configure valid API key in config file.")
-                self.logger.warning("LLM client not initialized, skipping cross-skill integration step")
+                print_current("⚠️  LLM client not available, skipping cross-experience integration. Please configure valid API key in config file.")
+                self.logger.warning("LLM client not initialized, skipping cross-experience integration step")
                 integrated_count = 0
             else:
                 clusters = self._cluster_skills_with_dbscan(skills)
@@ -588,13 +588,13 @@ Skill {i}:
                         continue
                     
                     # 获取聚类中的skill
-                    cluster_skills = []
+                    cluster_experiences = []
                     for idx in indices:
-                        file_path, skill_data = skills[idx]
-                        cluster_skills.append({
+                        file_path, experience_data = experiences[idx]
+                        cluster_experiences.append({
                             'file_path': file_path,
-                            'front_matter': skill_data['front_matter'],
-                            'content': skill_data['content']
+                            'front_matter': experience_data['front_matter'],
+                            'content': experience_data['content']
                         })
                     
                     # LLM决策
@@ -612,15 +612,15 @@ Skill {i}:
                         merged_fetch_count = 0
                         qualities = []
                         
-                        for skill in cluster_skills:
-                            front_matter = skill['front_matter']
+                        for experience in cluster_skills:
+                            front_matter = experience['front_matter']
                             merged_task_dirs.extend(front_matter.get('task_directories', []))
                             merged_fetch_count += front_matter.get('fetch_count', 0)
                             qualities.append(front_matter.get('quality_index', 0.5))
                         
                         # 创建新skill
                         front_matter = {
-                            'skill_id': skill_id,
+                            'experience_id': experience_id,
                             'title': title,
                             'usage_conditions': usage_conditions,
                             'quality_index': round(sum(qualities) / len(qualities), 3),
@@ -633,36 +633,36 @@ Skill {i}:
                             'user_preferences': ''
                         }
                         
-                        safe_title = self.skill_tools._sanitize_filename(title)
-                        skill_filename = f"skill_{safe_title}.md"
-                        skill_file_path = os.path.join(self.skill_tools.experience_dir, skill_filename)
+                        safe_title = self.experience_tools._sanitize_filename(title)
+                        experience_filename = f"experience_{safe_title}.md"
+                        experience_file_path = os.path.join(self.experience_tools.experience_dir, experience_filename)
                         
-                        if os.path.exists(skill_file_path):
-                            name, ext = os.path.splitext(skill_filename)
-                            skill_filename = f"{name}_{skill_id}{ext}"
-                            skill_file_path = os.path.join(self.skill_tools.experience_dir, skill_filename)
+                        if os.path.exists(experience_file_path):
+                            name, ext = os.path.splitext(experience_filename)
+                            experience_filename = f"{name}_{experience_id}{ext}"
+                            experience_file_path = os.path.join(self.experience_tools.experience_dir, experience_filename)
                         
-                        self.skill_tools._save_skill_file(skill_file_path, front_matter, content)
+                        self.experience_tools._save_experience_file(experience_file_path, front_matter, content)
                         
                         # 删除旧skill
-                        for skill in cluster_skills:
-                            old_skill_id = str(skill['front_matter'].get('skill_id', ''))
-                            self.skill_tools.delete_skill(old_skill_id)
+                        for experience in cluster_skills:
+                            old_experience_id = str(experience['front_matter'].get('experience_id', ''))
+                            self.experience_tools.delete_experience(old_experience_id)
                         
                         integrated_count += 1
             
-            self.logger.info(f"Integrated {integrated_count} skill clusters")
-            print_current(f"✅ Integrated {integrated_count} skill clusters")
+            self.logger.info(f"Integrated {integrated_count} experience clusters")
+            print_current(f"✅ Integrated {integrated_count} experience clusters")
         
         # 3. 清理长期不使用的skill
-        print_current("Step 3: Cleaning unused skills...")
-        skills = self._load_all_skills()
-        cleaned_count = self._clean_unused_skills(skills)
-        self.logger.info(f"Cleaned {cleaned_count} unused skills")
-        print_current(f"✅ Cleaned {cleaned_count} unused skills")
+        print_current("Step 3: Cleaning unused experiences...")
+        experiences = self._load_all_experiences()
+        cleaned_count = self._clean_unused_experiences(experiences)
+        self.logger.info(f"Cleaned {cleaned_count} unused experiences")
+        print_current(f"✅ Cleaned {cleaned_count} unused experiences")
         
-        self.logger.info("Skill management process completed")
-        print_system("✅ Skill management process completed")
+        self.logger.info("Experience management process completed")
+        print_system("✅ Experience management process completed")
 
 
 def main():

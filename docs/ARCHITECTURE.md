@@ -431,31 +431,31 @@ class ProtocolAdapter:
 
 ---
 
-## 12. Skill进化系统
+## 12. Experience进化系统
 
-### 12.1 Skill管理器
+### 12.1 Experience管理器
 
 ```python
-# src/skill_evolve/skill_manager.py
-class SkillManager:
-    """Skill整理管理器"""
+# src/experience/experience_manager.py
+class ExperienceManager:
+    """Experience整理管理器"""
     
-    def merge_similar_skills()    # 合并相似skill
-    def cleanup_unused_skills()   # 清理无用skill
+    def merge_similar_experiences()    # 合并相似skill
+    def cleanup_unused_experiences()   # 清理无用skill
     def cross_integrate()         # 跨skill整合
 ```
 
-### 12.2 Skill工具
+### 12.2 Experience工具
 
 ```python
-# src/skill_evolve/skill_tools.py
-class SkillTools:
-    """Skill管理与经验总结"""
+# src/experience/experience_tools.py
+class ExperienceTools:
+    """Experience管理与经验总结"""
     
-    def list_skills()             # 列出skill
-    def get_skill_details()       # 获取详情
-    def evaluate_skill()         # 评价skill
-    def update_skill()           # 更新skill
+    def list_experiences()             # 列出skill
+    def get_experience_details()       # 获取详情
+    def evaluate_experience()         # 评价skill
+    def update_experience()           # 更新skill
     
     # 中文分词 (jieba)
     # TF-IDF相似度计算

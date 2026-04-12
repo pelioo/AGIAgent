@@ -43,8 +43,8 @@
       "required": []
     }
   },
-  "query_skill": {
-    "description": "Search and retrieve relevant skills from the skill library based on semantic similarity. Returns the top 3 most relevant skills with their complete content including skill_id, title, usage conditions, quality index, and detailed content. Use this tool to find historical experiences and skills that might help complete the current task more efficiently.",
+  "query_experience": {
+    "description": "Search and retrieve relevant experiences from the experience library based on semantic similarity. Returns the top 3 most relevant skills with their complete content including experience_id, title, usage conditions, quality index, and detailed content. Use this tool to find historical experiences that might help complete the current task more efficiently.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -56,31 +56,31 @@
       "required": ["query"]
     }
   },
-  "rate_skill": {
-    "description": "Rate the quality of a skill after using it. Updates the skill's quality index using weighted average. Use this tool after completing a task to provide feedback on how useful the skill was.",
+  "rate_experience": {
+    "description": "Rate the quality of a skill after using it. Updates the experience's quality index using weighted average. Use this tool after completing a task to provide feedback on how useful the experience was.",
     "parameters": {
       "type": "object",
       "properties": {
-        "skill_id": {
+        "experience_id": {
           "type": "string",
-          "description": "The ID of the skill to rate (obtained from query_skill results)"
+          "description": "The ID of the experience to rate (obtained from query_experience results)"
         },
         "rating": {
           "type": "number",
           "description": "Rating value between 0.0 and 1.0, where 1.0 means the skill was very useful and 0.0 means it was not useful"
         }
       },
-      "required": ["skill_id", "rating"]
+      "required": ["experience_id", "rating"]
     }
   },
-  "edit_skill": {
-    "description": "Edit a skill file. Parameters are identical to edit_file tool. Use this to update skill content, usage conditions, or other information.",
+  "edit_experience": {
+    "description": "Edit a experience file. Parameters are identical to edit_file tool. Use this to update experience content, usage conditions, or other information.",
     "parameters": {
       "type": "object",
       "properties": {
-        "skill_id": {
+        "experience_id": {
           "type": "string",
-          "description": "The ID of the skill to edit"
+          "description": "The ID of the experience to edit"
         },
         "edit_mode": {
           "type": "string",
@@ -96,28 +96,28 @@
           "description": "For lines_replace mode, the old code to replace"
         }
       },
-      "required": ["skill_id", "edit_mode", "code_edit"]
+      "required": ["experience_id", "edit_mode", "code_edit"]
     }
   },
-  "delete_skill": {
-    "description": "Delete a skill file by moving it to the legacy directory. The skill will no longer be available for query but is preserved for reference.",
+  "delete_experience": {
+    "description": "Delete a experience file by moving it to the legacy directory. The skill will no longer be available for query but is preserved for reference.",
     "parameters": {
       "type": "object",
       "properties": {
-        "skill_id": {
+        "experience_id": {
           "type": "string",
-          "description": "The ID of the skill to delete"
+          "description": "The ID of the experience to delete"
         }
       },
-      "required": ["skill_id"]
+      "required": ["experience_id"]
     }
   },
-  "copy_skill_files": {
-    "description": "Copy files to a skill's code backup directory. Use this to backup successful code files and documents related to a skill. The model should analyze manager.out logs to determine which files are valid outputs that should be backed up.",
+  "copy_experience_files": {
+    "description": "Copy files to a experience's code backup directory. Use this to backup successful code files and documents related to a skill. The model should analyze manager.out logs to determine which files are valid outputs that should be backed up.",
     "parameters": {
       "type": "object",
       "properties": {
-        "skill_id": {
+        "experience_id": {
           "type": "string",
           "description": "The ID of the skill to associate files with"
         },
@@ -126,10 +126,10 @@
           "items": {
             "type": "string"
           },
-          "description": "List of file paths (relative to workspace) to copy to the skill's backup directory. Should include code files (.py, .js, .ts, .java, etc.) and document files (.md, .txt, etc.), but exclude configuration files (.json, .yaml, etc.) and image files."
+          "description": "List of file paths (relative to workspace) to copy to the experience's backup directory. Should include code files (.py, .js, .ts, .java, etc.) and document files (.md, .txt, etc.), but exclude configuration files (.json, .yaml, etc.) and image files."
         }
       },
-      "required": ["skill_id", "file_paths"]
+      "required": ["experience_id", "file_paths"]
     }
   }
 } 

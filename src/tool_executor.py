@@ -417,41 +417,41 @@ class ToolExecutor:
             })
         
         # Initialize skill tools if long-term memory is enabled
-        self.skill_tools = None
+        self.experience_tools = None
         if self.long_term_memory:
             try:
-                from src.skill_evolve.skill_tools import SkillTools
-                self.skill_tools = SkillTools(
+                from src.experience.experience_tools import ExperienceTools
+                self.experience_tools = ExperienceTools(
                     workspace_root=self.workspace_dir,
                     user_id=self.user_id
                 )
                 # Register skill tools
                 self.tool_map.update({
-                    "query_skill": self.skill_tools.query_skill,
-                    "rate_skill": self.skill_tools.rate_skill,
-                    "edit_skill": self.skill_tools.edit_skill,
-                    "delete_skill": self.skill_tools.delete_skill,
-                    "copy_skill_files": self.skill_tools.copy_skill_files,
+                    "query_experience": self.experience_tools.query_experience,
+                    "rate_experience": self.experience_tools.rate_experience,
+                    "edit_experience": self.experience_tools.edit_experience,
+                    "delete_experience": self.experience_tools.delete_experience,
+                    "copy_experience_files": self.experience_tools.copy_experience_files,
                 })
-                print_system("🎯 Skill tools registered")
+                print_system("🎯 Experience tools registered")
             except ImportError as e:
-                print_current(f"⚠️ Skill tools module import failed: {e}")
-                self.skill_tools = None
+                print_current(f"⚠️ Experience tools module import failed: {e}")
+                self.experience_tools = None
             except Exception as e:
-                print_current(f"⚠️ Skill tools initialization failed: {e}")
-                self.skill_tools = None
+                print_current(f"⚠️ Experience tools initialization failed: {e}")
+                self.experience_tools = None
         
         # Add error handlers for disabled skill tools
-        if not self.skill_tools:
-            def _skill_disabled_error(*args, **kwargs):
-                return {"status": "error", "message": "Skill tools are only available when long-term memory is enabled"}
+        if not self.experience_tools:
+            def _experience_disabled_error(*args, **kwargs):
+                return {"status": "error", "message": "Experience tools are only available when long-term memory is enabled"}
             
             self.tool_map.update({
-                "query_skill": _skill_disabled_error,
-                "rate_skill": _skill_disabled_error,
-                "edit_skill": _skill_disabled_error,
-                "delete_skill": _skill_disabled_error,
-                "copy_skill_files": _skill_disabled_error,
+                "query_experience": _experience_disabled_error,
+                "rate_experience": _experience_disabled_error,
+                "edit_experience": _experience_disabled_error,
+                "delete_experience": _experience_disabled_error,
+                "copy_experience_files": _experience_disabled_error,
             })
         
         # Add multi-agent tools if enabled, otherwise add error handlers
@@ -1148,25 +1148,25 @@ You are currently operating in INFINITE AUTONOMOUS LOOP MODE. In this mode:
                 
                 system_prompt = system_prompt.replace(task_completion_section, infinite_loop_section)
             
-            # Add skill query feature if long-term memory is enabled
-            if self.skill_tools:
-                skill_query_section = """
-## Skill Query Feature
-For complex tasks, you can use the `query_skill` tool to search for relevant historical experiences and skills that might help you complete the task more efficiently. This is especially useful when you encounter similar problems or need to follow established patterns.
+            # Add experience query feature if long-term memory is enabled
+            if self.experience_tools:
+                experience_query_section = """
+## Experience Query Feature
+For complex tasks, you can use the `query_experience` tool to search for relevant historical experiences and skills that might help you complete the task more efficiently. This is especially useful when you encounter similar problems or need to follow established patterns.
 
-When you use skills from `query_skill`, make sure to:
-1. Keep the skill_id in your conversation history for reference
+When you use experiences from `query_experience`, make sure to:
+1. Keep the experience_id in your conversation history for reference
 2. Explicitly document which skills you referenced in plan.md
-3. After task completion, use `rate_skill` to update the quality index of skills you used
+3. After task completion, use `rate_experience` to update the quality index of experiences you used
 
-The skill system helps you learn from past experiences and improve over time. Use it proactively for complex tasks!
+The experience system helps you learn from past experiences and improve over time. Use it proactively for complex tasks!
 """
                 # Insert skill query section before "Task Execution Approach" or at the end
                 if "## Task Execution Approach" in system_prompt:
                     task_exec_pos = system_prompt.find("## Task Execution Approach")
-                    system_prompt = system_prompt[:task_exec_pos] + skill_query_section + "\n" + system_prompt[task_exec_pos:]
+                    system_prompt = system_prompt[:task_exec_pos] + experience_query_section + "\n" + system_prompt[task_exec_pos:]
                 else:
-                    system_prompt = system_prompt + skill_query_section
+                    system_prompt = system_prompt + experience_query_section
             
             return system_prompt
                 
