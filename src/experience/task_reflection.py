@@ -99,7 +99,7 @@ class TaskReflection:
                 if OPENAI_AVAILABLE:
                     self.llm_client = OpenAI(api_key=self.api_key, base_url=self.api_base)
         
-        # 初始化skill工具
+        # 初始化experience工具
         self.experience_tools = ExperienceTools(workspace_root=self.root_dir)
         
         # 设置日志
@@ -539,7 +539,7 @@ class TaskReflection:
     
     def _backup_files(self, output_dir: str, files_to_backup: List[str], experience_id: str) -> List[str]:
         """
-        备份文件到skill代码目录
+        备份文件到experience代码目录
         
         Args:
             output_dir: 任务输出目录

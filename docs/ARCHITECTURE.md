@@ -440,9 +440,9 @@ class ProtocolAdapter:
 class ExperienceManager:
     """Experience整理管理器"""
     
-    def merge_similar_experiences()    # 合并相似skill
-    def cleanup_unused_experiences()   # 清理无用skill
-    def cross_integrate()         # 跨skill整合
+    def merge_similar_experiences()    # 合并相似experience
+    def cleanup_unused_experiences()   # 清理无用experience
+    def cross_integrate()         # 跨experience整合
 ```
 
 ### 12.2 Experience工具
@@ -452,10 +452,10 @@ class ExperienceManager:
 class ExperienceTools:
     """Experience管理与经验总结"""
     
-    def list_experiences()             # 列出skill
+    def list_experiences()             # 列出experience
     def get_experience_details()       # 获取详情
-    def evaluate_experience()         # 评价skill
-    def update_experience()           # 更新skill
+    def evaluate_experience()         # 评价experience
+    def update_experience()           # 更新experience
     
     # 中文分词 (jieba)
     # TF-IDF相似度计算

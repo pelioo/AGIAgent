@@ -84,7 +84,7 @@ class ExperienceTools:
     
     def __init__(self, workspace_root: Optional[str] = None, user_id: Optional[str] = None):
         """
-        初始化Skill工具
+        初始化Experience工具
         
         Args:
             workspace_root: 工作空间根目录
@@ -209,7 +209,7 @@ class ExperienceTools:
     
     def _load_experience_file(self, experience_file_path: str) -> Optional[Dict[str, Any]]:
         """
-        加载skill文件
+        加载experience文件
         
         Args:
             experience_file_path: experience文件路径
@@ -251,7 +251,7 @@ class ExperienceTools:
             return None
     
     def _save_experience_file(self, experience_file_path: str, front_matter: Dict[str, Any], content: str):
-        """保存skill文件"""
+        """保存experience文件"""
         try:
             os.makedirs(os.path.dirname(experience_file_path), exist_ok=True)
             
@@ -300,13 +300,13 @@ class ExperienceTools:
     
     def query_experience(self, query: str) -> Dict[str, Any]:
         """
-        查询相关skill
+        查询相关experience
         
         Args:
             query: 查询字符串
             
         Returns:
-            包含status, message, experiences_count, skills的字典
+            包含status, message, experiences_count, experiences的字典
         """
         if not SKLEARN_AVAILABLE:
             return {
@@ -325,7 +325,7 @@ class ExperienceTools:
             }
         
         try:
-            # 加载所有skill文件
+            # 加载所有experience文件
             experience_files = []
             for filename in os.listdir(self.experience_dir):
                 if filename.startswith('experience_') and filename.endswith('.md'):
@@ -451,7 +451,7 @@ class ExperienceTools:
     
     def rate_experience(self, experience_id: str, rating: float) -> Dict[str, Any]:
         """
-        评价skill质量
+        评价experience质量
         
         Args:
             experience_id: Experience ID
@@ -549,7 +549,7 @@ class ExperienceTools:
     
     def edit_experience(self, experience_id: str, edit_mode: str, code_edit: str, old_code: Optional[str] = None) -> Dict[str, Any]:
         """
-        编辑skill文件
+        编辑experience文件
         
         Args:
             experience_id: Experience ID
@@ -621,7 +621,7 @@ class ExperienceTools:
     
     def delete_experience(self, experience_id: str) -> Dict[str, Any]:
         """
-        删除skill文件（移动到legacy目录）
+        删除experience文件（移动到legacy目录）
         
         Args:
             experience_id: Experience ID
@@ -672,7 +672,7 @@ class ExperienceTools:
     
     def copy_experience_files(self, experience_id: str, file_paths: List[str]) -> Dict[str, Any]:
         """
-        复制文件到skill的代码备份目录
+        复制文件到experience的代码备份目录
         
         Args:
             experience_id: Experience ID

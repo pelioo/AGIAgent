@@ -64,7 +64,7 @@ class ExperienceManager:
     
     def __init__(self, root_dir: Optional[str] = None, config_file: str = "config/config.txt"):
         """
-        初始化Skill管理器
+        初始化Experience管理器
         
         Args:
             root_dir: 根目录（如果指定，覆盖config中的设置）
@@ -120,7 +120,7 @@ class ExperienceManager:
                 except Exception as e:
                     self.logger.warning(f"Failed to initialize OpenAI-compatible client: {e}")
         
-        # 初始化skill工具
+        # 初始化experience工具
         self.experience_tools = ExperienceTools(workspace_root=self.root_dir)
         
         # 设置日志
@@ -263,9 +263,9 @@ class ExperienceManager:
             if i in processed:
                 continue
             
-            # 查找相似度高的skill
+            # 查找相似度高的experience
             similar_indices = []
-            for j in range(i + 1, len(skills)):
+            for j in range(i + 1, len(experiences)):
                 if j in processed:
                     continue
                 
@@ -324,7 +324,7 @@ class ExperienceManager:
                     merged_count += 1
                     processed.add(idx)
             
-            # 更新主skill
+            # 更新主experience
             main_front_matter['task_directories'] = merged_task_dirs
             main_front_matter['fetch_count'] = merged_fetch_count
             main_front_matter['updated_at'] = datetime.now().isoformat()
@@ -394,10 +394,10 @@ class ExperienceManager:
     
     def _call_llm_for_merge_decision(self, experience_group: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        调用LLM决定是否合并skill组
+        调用LLM决定是否合并experience组
         
         Args:
-            experience_group: skill组列表
+            experience_group: experience组列表
             
         Returns:
             LLM决策结果，包含是否合并和合并后的内容
@@ -415,11 +415,11 @@ class ExperienceManager:
             }
         
         # 构建提示
-        system_prompt = """你是一个experience整合专家。请分析以下一组相关的skill，决定是否应该将它们合并成一个更高级的综合skill。
+        system_prompt = """你是一个experience整合专家。请分析以下一组相关的experience，决定是否应该将它们合并成一个更高级的综合experience。
 
-如果这些skill可以整合成一个更有价值的综合skill，请：
+如果这些experience可以整合成一个更有价值的综合experience，请：
 1. 决定是否合并（输出"MERGE: yes"或"MERGE: no"）
-2. 如果合并，提供合并后的skill标题、使用条件和详细内容
+2. 如果合并，提供合并后的experience标题、使用条件和详细内容
 3. 说明合并的理由
 
 输出格式：
