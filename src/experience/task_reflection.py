@@ -156,7 +156,7 @@ class TaskReflection:
         1. data/output_XXX/ (直接在data目录下，由agia.py生成)
         2. data/{user_dir}/output_XXX/ (标准结构)
         3. data/benchmark_results/*/baseline_outputs/output_XXX/ (评测结构)
-        4. data/benchmark_results/*/skill_outputs/output_XXX/ (评测结构)
+        4. data/benchmark_results/*/experience_outputs/output_XXX/ (评测结构)
         
         Returns:
             [(目录路径, 修改时间), ...] 列表，按时间倒序
@@ -206,8 +206,8 @@ class TaskReflection:
                     if not os.path.isdir(benchmark_path):
                         continue
                     
-                    # 查找 baseline_outputs 和 skill_outputs 目录
-                    for output_type in ["baseline_outputs", "skill_outputs"]:
+                    # 查找 baseline_outputs 和 experience_outputs 目录
+                    for output_type in ["baseline_outputs", "experience_outputs"]:
                         outputs_dir = os.path.join(benchmark_path, output_type)
                         if os.path.exists(outputs_dir):
                             try:
