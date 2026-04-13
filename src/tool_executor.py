@@ -416,7 +416,7 @@ class ToolExecutor:
                 "get_memory_summary": _memory_disabled_error,
             })
         
-        # Initialize skill tools if long-term memory is enabled
+        # Initialize experience tools if long-term memory is enabled
         self.experience_tools = None
         if self.long_term_memory:
             try:
@@ -425,7 +425,7 @@ class ToolExecutor:
                     workspace_root=self.workspace_dir,
                     user_id=self.user_id
                 )
-                # Register skill tools
+                # Register experience tools
                 self.tool_map.update({
                     "query_experience": self.experience_tools.query_experience,
                     "rate_experience": self.experience_tools.rate_experience,
@@ -441,7 +441,7 @@ class ToolExecutor:
                 print_current(f"⚠️ Experience tools initialization failed: {e}")
                 self.experience_tools = None
         
-        # Add error handlers for disabled skill tools
+        # Add error handlers for disabled experience tools
         if not self.experience_tools:
             def _experience_disabled_error(*args, **kwargs):
                 return {"status": "error", "message": "Experience tools are only available when long-term memory is enabled"}
@@ -1152,16 +1152,16 @@ You are currently operating in INFINITE AUTONOMOUS LOOP MODE. In this mode:
             if self.experience_tools:
                 experience_query_section = """
 ## Experience Query Feature
-For complex tasks, you can use the `query_experience` tool to search for relevant historical experiences and skills that might help you complete the task more efficiently. This is especially useful when you encounter similar problems or need to follow established patterns.
+For complex tasks, you can use the `query_experience` tool to search for relevant historical experiences that might help you complete the task more efficiently. This is especially useful when you encounter similar problems or need to follow established patterns.
 
 When you use experiences from `query_experience`, make sure to:
 1. Keep the experience_id in your conversation history for reference
-2. Explicitly document which skills you referenced in plan.md
+2. Explicitly document which experiences you referenced in plan.md
 3. After task completion, use `rate_experience` to update the quality index of experiences you used
 
 The experience system helps you learn from past experiences and improve over time. Use it proactively for complex tasks!
 """
-                # Insert skill query section before "Task Execution Approach" or at the end
+                # Insert experience query section before "Task Execution Approach" or at the end
                 if "## Task Execution Approach" in system_prompt:
                     task_exec_pos = system_prompt.find("## Task Execution Approach")
                     system_prompt = system_prompt[:task_exec_pos] + experience_query_section + "\n" + system_prompt[task_exec_pos:]

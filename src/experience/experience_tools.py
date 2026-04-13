@@ -266,20 +266,20 @@ class ExperienceTools:
             raise
     
     def _get_experience_file_path(self, experience_id: str) -> Optional[str]:
-        """根据skill_id查找skill文件"""
+        """根据experience_id查找experience文件"""
         if not self.experience_dir:
             return None
         
-        # 确保skill_id是字符串类型（统一类型以便比较）
+        # 确保experience_id是字符串类型（统一类型以便比较）
         experience_id_str = str(experience_id)
         
-        # 遍历所有skill文件，查找匹配的skill_id
+        # 遍历所有experience文件，查找匹配的experience_id
         for filename in os.listdir(self.experience_dir):
             if filename.startswith('experience_') and filename.endswith('.md'):
                 file_path = os.path.join(self.experience_dir, filename)
                 experience_data = self._load_experience_file(file_path)
                 if experience_data:
-                    # 获取文件中的skill_id，确保转换为字符串进行比较
+                    # 获取文件中的experience_id，确保转换为字符串进行比较
                     file_experience_id = experience_data['front_matter'].get('experience_id')
                     if file_experience_id is not None:
                         # 统一转换为字符串进行比较，避免类型不匹配
@@ -489,7 +489,7 @@ class ExperienceTools:
                 debug_info.append(f"Experience directory: {self.experience_dir}")
                 try:
                     experience_files = [f for f in os.listdir(self.experience_dir) 
-                                 if f.startswith('skill_') and f.endswith('.md')]
+                                 if f.startswith('experience_') and f.endswith('.md')]
                     debug_info.append(f"Found {len(experience_files)} experience files in directory")
                     if experience_files:
                         # 尝试列出前几个技能的ID以便调试
@@ -506,7 +506,7 @@ class ExperienceTools:
                 except Exception as e:
                     debug_info.append(f"Error listing experiences: {str(e)}")
             
-            error_msg = f"Experience with ID '{skill_id}' not found"
+            error_msg = f"Experience with ID '{experience_id}' not found"
             if debug_info:
                 error_msg += f". Debug info: {'; '.join(debug_info)}"
             
@@ -520,7 +520,7 @@ class ExperienceTools:
             if not experience_data:
                 return {
                     "status": "error",
-                    "message": f"Failed to load experience file for ID {skill_id}"
+                    "message": f"Failed to load experience file for ID {experience_id}"
                 }
             
             front_matter = experience_data['front_matter']
@@ -536,7 +536,7 @@ class ExperienceTools:
             return {
                 "status": "success",
                 "message": f"Experience {experience_id} quality index updated from {old_quality:.3f} to {new_quality:.3f}",
-                "skill_id": experience_id,
+                "experience_id": experience_id,
                 "old_quality": old_quality,
                 "new_quality": new_quality
             }
@@ -570,7 +570,7 @@ class ExperienceTools:
         if not experience_file_path:
             return {
                 "status": "error",
-                "message": f"Experience with ID {skill_id} not found"
+                "message": f"Experience with ID {experience_id} not found"
             }
         
         try:
@@ -578,7 +578,7 @@ class ExperienceTools:
             if not experience_data:
                 return {
                     "status": "error",
-                    "message": f"Failed to load experience file for ID {skill_id}"
+                    "message": f"Failed to load experience file for ID {experience_id}"
                 }
             
             front_matter = experience_data['front_matter']
@@ -609,7 +609,7 @@ class ExperienceTools:
             return {
                 "status": "success",
                 "message": f"Experience {experience_id} updated successfully",
-                "skill_id": experience_id,
+                "experience_id": experience_id,
                 "edit_mode": edit_mode
             }
         except Exception as e:
@@ -639,7 +639,7 @@ class ExperienceTools:
         if not experience_file_path:
             return {
                 "status": "error",
-                "message": f"Experience with ID {skill_id} not found"
+                "message": f"Experience with ID {experience_id} not found"
             }
         
         try:
@@ -660,7 +660,7 @@ class ExperienceTools:
             return {
                 "status": "success",
                 "message": f"Experience {experience_id} moved to legacy directory",
-                "skill_id": experience_id,
+                "experience_id": experience_id,
                 "legacy_path": legacy_path
             }
         except Exception as e:
@@ -691,7 +691,7 @@ class ExperienceTools:
         if not experience_file_path:
             return {
                 "status": "error",
-                "message": f"Experience with ID {skill_id} not found"
+                "message": f"Experience with ID {experience_id} not found"
             }
         
         try:
@@ -699,7 +699,7 @@ class ExperienceTools:
             if not experience_data:
                 return {
                     "status": "error",
-                    "message": f"Failed to load experience file for ID {skill_id}"
+                    "message": f"Failed to load experience file for ID {experience_id}"
                 }
             
             front_matter = experience_data['front_matter']
@@ -709,7 +709,7 @@ class ExperienceTools:
             if task_dirs:
                 task_name = task_dirs[0].replace('output_', 'task_')
             else:
-                task_name = f"task_{skill_id}"
+                task_name = f"task_{experience_id}"
             
             backup_dir = os.path.join(self.experience_dir, "codes", task_name)
             os.makedirs(backup_dir, exist_ok=True)
@@ -765,7 +765,7 @@ class ExperienceTools:
             return {
                 "status": "success",
                 "message": f"Copied {len(copied_files)} files to experience backup directory",
-                "skill_id": experience_id,
+                "experience_id": experience_id,
                 "copied_files": copied_files,
                 "failed_files": failed_files,
                 "backup_dir": backup_dir

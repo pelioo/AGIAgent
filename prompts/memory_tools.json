@@ -44,20 +44,20 @@
     }
   },
   "query_experience": {
-    "description": "Search and retrieve relevant experiences from the experience library based on semantic similarity. Returns the top 3 most relevant skills with their complete content including experience_id, title, usage conditions, quality index, and detailed content. Use this tool to find historical experiences that might help complete the current task more efficiently.",
+    "description": "Search and retrieve relevant experiences from the experience library based on semantic similarity. Returns the top 3 most relevant experiences with their complete content including experience_id, title, usage conditions, quality index, and detailed content. Use this tool to find historical experiences that might help complete the current task more efficiently.",
     "parameters": {
       "type": "object",
       "properties": {
         "query": {
           "type": "string",
-          "description": "The query to search for relevant skills. Can be a task description, problem statement, or description of what you're looking for."
+          "description": "The query to search for relevant experiences. Can be a task description, problem statement, or description of what you're looking for."
         }
       },
       "required": ["query"]
     }
   },
   "rate_experience": {
-    "description": "Rate the quality of a skill after using it. Updates the experience's quality index using weighted average. Use this tool after completing a task to provide feedback on how useful the experience was.",
+    "description": "Rate the quality of an experience after using it. Updates the experience's quality index using weighted average. Use this tool after completing a task to provide feedback on how useful the experience was.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -67,7 +67,7 @@
         },
         "rating": {
           "type": "number",
-          "description": "Rating value between 0.0 and 1.0, where 1.0 means the skill was very useful and 0.0 means it was not useful"
+          "description": "Rating value between 0.0 and 1.0, where 1.0 means the experience was very useful and 0.0 means it was not useful"
         }
       },
       "required": ["experience_id", "rating"]
@@ -100,7 +100,7 @@
     }
   },
   "delete_experience": {
-    "description": "Delete a experience file by moving it to the legacy directory. The skill will no longer be available for query but is preserved for reference.",
+    "description": "Delete an experience file by moving it to the legacy directory. The experience will no longer be available for query but is preserved for reference.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -113,13 +113,13 @@
     }
   },
   "copy_experience_files": {
-    "description": "Copy files to a experience's code backup directory. Use this to backup successful code files and documents related to a skill. The model should analyze manager.out logs to determine which files are valid outputs that should be backed up.",
+    "description": "Copy files to an experience's code backup directory. Use this to backup successful code files and documents related to an experience. The model should analyze manager.out logs to determine which files are valid outputs that should be backed up.",
     "parameters": {
       "type": "object",
       "properties": {
         "experience_id": {
           "type": "string",
-          "description": "The ID of the skill to associate files with"
+          "description": "The ID of the experience to associate files with"
         },
         "file_paths": {
           "type": "array",
