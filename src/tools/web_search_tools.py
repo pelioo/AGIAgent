@@ -1165,7 +1165,17 @@ class WebSearchTools:
                     else:
                         print_debug("🔍 Baidu search engine skipped (language is English)")
 
-                    # Add DuckDuckGo as primary/secondary option (depending on language)
+                    # Add Bing as secondary option (for Chinese scenarios, better international coverage)
+                    search_engines.append({
+                        'name': 'Bing',
+                        'url': 'https://cn.bing.com/search?q={}&mkt=zh-CN&setlang=zh-CN',
+                        'result_selector': 'h2 a, .b_algo h2 a, .sa_item h3 a, a[href*="bing.com/aclk"]',
+                        'container_selector': '.sa_item, .b_algo, li.b_algo',
+                        'snippet_selectors': ['.b_caption p', '.b_snippet', '.b_textSnippet', 'p']
+                    })
+                    print_debug("🔍 Bing search engine added as secondary option (after Baidu)")
+
+                    # Add DuckDuckGo as tertiary option (depending on language)
                     search_engines.append({
                         'name': 'DuckDuckGo',
                         'url': 'https://html.duckduckgo.com/html/?q={}',
@@ -1174,7 +1184,7 @@ class WebSearchTools:
                         'snippet_selectors': ['.result__snippet', '.result__body', '.snippet', '.result__description']
                     })
                     if current_lang == 'zh':
-                        print_debug("🔍 DuckDuckGo search engine added as secondary option")
+                        print_debug("🔍 DuckDuckGo search engine added as tertiary option")
                     else:
                         print_debug("🔍 DuckDuckGo search engine added as primary option")
 
@@ -1397,7 +1407,13 @@ class WebSearchTools:
                                             decoded_url = self._decode_baidu_redirect_url(url)
                                             if decoded_url != url:
                                                 url = decoded_url
-                                        
+
+                                        # Decode Bing redirect URLs to get real destination
+                                        if 'bing.com/aclk' in url.lower():
+                                            decoded_url = self._decode_bing_redirect_url(url)
+                                            if decoded_url != url:
+                                                url = decoded_url
+
                                         # Check again after decoding (decoded URL might be Baidu Wenku or MBD)
                                         if 'wenku.baidu.com' in url.lower():
                                             continue
@@ -4167,6 +4183,30 @@ Cleaned Content Length: {len(cleaned_content)} characters
 
         # Return original URL if decoding fails
         return baidu_url
+
+    def _decode_bing_redirect_url(self, bing_url: str) -> str:
+        """
+        Decode Bing redirect URL to get the real destination URL
+        
+        Bing URL format: https://cn.bing.com/aclk?xxx&u=encoded_url
+        
+        Args:
+            bing_url: Bing redirect URL
+            
+        Returns:
+            Real destination URL, or original URL if decoding fails
+        """
+        try:
+            if 'bing.com/aclk' in bing_url.lower() and '&u=' in bing_url:
+                parsed = urllib.parse.urlparse(bing_url)
+                params = urllib.parse.parse_qs(parsed.query)
+                if 'u' in params:
+                    decoded_url = urllib.parse.unquote(params['u'][0])
+                    if decoded_url.startswith(('http://', 'https://')):
+                        return decoded_url
+        except Exception:
+            pass
+        return bing_url
 
     def _decode_duckduckgo_redirect_url(self, ddg_url: str) -> str:
         """
