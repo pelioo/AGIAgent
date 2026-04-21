@@ -512,15 +512,15 @@ class WebSearchTools:
                         
                         # Create a formatted text file with metadata (统一格式)
                         formatted_content = f"""Title: {title}
-URL: {url}
-Search Term: {search_term}
-Timestamp: {datetime.datetime.now().isoformat()}
-Original Content Length: {len(content)} characters
-Cleaned Content Length: {len(cleaned_content)} characters
+                        URL: {url}
+                        Search Term: {search_term}
+                        Timestamp: {datetime.datetime.now().isoformat()}
+                        Original Content Length: {len(content)} characters
+                        Cleaned Content Length: {len(cleaned_content)} characters
 
 
-{cleaned_content}
-"""
+                        {cleaned_content}
+                        """
                         
                         try:
                             with open(txt_filepath, 'w', encoding='utf-8') as f:
@@ -618,26 +618,26 @@ Cleaned Content Length: {len(cleaned_content)} characters
             # Construct system prompt for content filtering
             system_prompt = """You are an expert at extracting relevant information from web content. Your task is to:
 
-1. Extract ONLY the information that is directly relevant to the search query
-2. Remove navigation menus, advertisements, cookie notices, footer information, sidebar content, and other webpage UI elements
-3. Remove repetitive or promotional content
-4. Keep the main article content, key facts, data, and relevant details
-5. Maintain the original language and important formatting
-6. If the content doesn't contain relevant information, return "No relevant content found"
+            1. Extract ONLY the information that is directly relevant to the search query
+            2. Remove navigation menus, advertisements, cookie notices, footer information, sidebar content, and other webpage UI elements
+            3. Remove repetitive or promotional content
+            4. Keep the main article content, key facts, data, and relevant details
+            5. Maintain the original language and important formatting
+            6. If the content doesn't contain relevant information, return "No relevant content found"
 
-Focus on providing clean, useful information that directly answers or relates to what the user was searching for."""
+            Focus on providing clean, useful information that directly answers or relates to what the user was searching for."""
 
             # Construct user prompt
             user_prompt = f"""Search Query: "{search_term}"
-Page Title: "{title}"
+            Page Title: "{title}"
 
-Please extract only the relevant information from the following webpage content. Remove navigation elements, ads, and irrelevant text, keeping only content that relates to the search query:
+            Please extract only the relevant information from the following webpage content. Remove navigation elements, ads, and irrelevant text, keeping only content that relates to the search query:
 
----
-{content[:8000]}  
----
+            ---
+            {content[:8000]}  
+            ---
 
-Please provide the extracted relevant content:"""
+            Please provide the extracted relevant content:"""
 
             # Call LLM based on type
             if self.is_claude:
@@ -730,38 +730,38 @@ Please provide the extracted relevant content:"""
             # Construct system prompt for detailed individual analysis
             system_prompt = """You are an expert at analyzing and summarizing web search results. Your task is to create a comprehensive summary that processes each webpage result individually while maintaining focus on the search query. Follow these guidelines:
 
-CONTENT REQUIREMENTS:
-1. Focus specifically on information related to the search query: "{search_term}"
-2. Process each webpage result individually with detailed analysis
-3. Extract key information, facts, data, dates, names, numbers, and concrete details from each source
-4. Maintain objectivity and note different perspectives when they exist
-5. Use the original language of the content (Chinese/English) as appropriate
-6. Preserve important details rather than providing superficial summaries
+            CONTENT REQUIREMENTS:
+            1. Focus specifically on information related to the search query: "{search_term}"
+            2. Process each webpage result individually with detailed analysis
+            3. Extract key information, facts, data, dates, names, numbers, and concrete details from each source
+            4. Maintain objectivity and note different perspectives when they exist
+            5. Use the original language of the content (Chinese/English) as appropriate
+            6. Preserve important details rather than providing superficial summaries
 
-STRUCTURE REQUIREMENTS:
-- Start with a brief overview of the search topic
-- Analyze each webpage result individually in separate sections
-- For each webpage, include:
-  * Title and main findings
-  * Key facts, data, and specific details
-  * Relevant quotes or important information
-  * How it relates to the search query
-  * The corresponding saved HTML file location (if available)
-- End with a synthesis of key findings across all sources
+            STRUCTURE REQUIREMENTS:
+            - Start with a brief overview of the search topic
+            - Analyze each webpage result individually in separate sections
+            - For each webpage, include:
+            * Title and main findings
+            * Key facts, data, and specific details
+            * Relevant quotes or important information
+            * How it relates to the search query
+            * The corresponding saved HTML file location (if available)
+            - End with a synthesis of key findings across all sources
 
-INDIVIDUAL RESULT ANALYSIS:
-For each webpage result, provide:
-- Clear section heading with the webpage title
-- Detailed extraction of relevant information
-- Specific facts, statistics, quotes, and examples
-- Analysis of how the content answers the search query
-- File location information for reference
+            INDIVIDUAL RESULT ANALYSIS:
+            For each webpage result, provide:
+            - Clear section heading with the webpage title
+            - Detailed extraction of relevant information
+            - Specific facts, statistics, quotes, and examples
+            - Analysis of how the content answers the search query
+            - File location information for reference
 
-TECHNICAL NOTE:
-Always end your summary with this important notice:
-"📁 **Original Content Storage**: Complete HTML source files and plain text versions of all webpages have been automatically saved to the `web_search_result` folder. For more detailed original content or in-depth analysis, you can use the `read_file` tool to directly access these files, or use the `workspace_search` tool to search for specific information within the folder. File names include search keywords, webpage titles, and timestamps for easy identification and retrieval."
+            TECHNICAL NOTE:
+            Always end your summary with this important notice:
+            "📁 **Original Content Storage**: Complete HTML source files and plain text versions of all webpages have been automatically saved to the `web_search_result` folder. For more detailed original content or in-depth analysis, you can use the `read_file` tool to directly access these files, or use the `workspace_search` tool to search for specific information within the folder. File names include search keywords, webpage titles, and timestamps for easy identification and retrieval."
 
-Create a detailed, informative summary that provides substantial value by analyzing each webpage individually."""
+            Create a detailed, informative summary that provides substantial value by analyzing each webpage individually."""
 
             # Prepare content from results with file information
             results_content = []
@@ -792,22 +792,22 @@ Create a detailed, informative summary that provides substantial value by analyz
             # Construct user prompt with focus on individual analysis
             user_prompt = f"""Search Query: "{search_term}"
 
-Please provide a comprehensive analysis of the following search results. Focus on extracting information specifically related to the search query "{search_term}". 
+            Please provide a comprehensive analysis of the following search results. Focus on extracting information specifically related to the search query "{search_term}". 
 
-Analyze each webpage result individually and provide:
-1. A brief overview of the search topic
-2. Individual analysis of each webpage result with:
-   - Title and main findings related to the search query
-   - Key facts, data, statistics, and specific details
-   - Important quotes or information
-   - How the content answers or relates to the search query
-   - Reference to the saved HTML file location
-3. A synthesis of key findings across all sources
+            Analyze each webpage result individually and provide:
+            1. A brief overview of the search topic
+            2. Individual analysis of each webpage result with:
+            - Title and main findings related to the search query
+            - Key facts, data, statistics, and specific details
+            - Important quotes or information
+            - How the content answers or relates to the search query
+            - Reference to the saved HTML file location
+            3. A synthesis of key findings across all sources
 
-Search Results to Analyze:
-{combined_content}
+            Search Results to Analyze:
+            {combined_content}
 
-Please create a detailed, structured analysis that preserves important information from each webpage while focusing on the search query."""
+            Please create a detailed, structured analysis that preserves important information from each webpage while focusing on the search query."""
 
             # Call LLM based on type
             if self.is_claude:
