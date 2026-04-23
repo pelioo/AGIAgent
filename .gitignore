@@ -59,7 +59,6 @@ config/config.txt
 my_outputs/
 output_tale_jericho_*/
 output_tale_jericho_batch_*/
-data/
 data_tale_alfworld/
 data_tale_textworld_express/
 apps/xiaohongshu/
@@ -74,7 +73,8 @@ long_term_memory/
 Extend-dependenc/
 
 # 排除工作区文件夹
-peli/
+data/peli/
+data/default/
 
 # 其它排除 
 manager.out
