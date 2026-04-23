@@ -73,6 +73,9 @@ long_term_memory/
 # 排除 扩展依赖文件 
 Extend-dependenc/
 
+# 排除工作区文件夹
+peli/
+
 # 其它排除 
 manager.out
 agia.log
