@@ -50,7 +50,6 @@ logs/
 
 # Claude Code files
 .claude/
-CLAUDE.md
 
 #config
 config/config.txt
