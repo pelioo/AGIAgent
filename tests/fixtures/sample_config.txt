@@ -1,0 +1,32 @@
+# AGI Agent Test Configuration
+# This file is used by tests/fixtures/sample_config.txt
+
+# API Configuration
+api_key=test_api_key_12345
+api_base=https://api.anthropic.com/v1
+model=claude-sonnet-4-0
+max_tokens=8192
+temperature=0.7
+
+# Streaming
+streaming=True
+
+# Language
+LANG=zh
+
+# Round Sync
+enable_round_sync=True
+sync_round=3
+
+# History Management
+summary_trigger_length=100000
+compression_strategy=llm_summary
+
+# Multi-Agent
+multi_agent=False
+
+# Thinking
+enable_thinking=False
+
+# Truncation
+truncation_length=10000

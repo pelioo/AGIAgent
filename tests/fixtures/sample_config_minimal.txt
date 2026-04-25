@@ -1,0 +1,5 @@
+# AGI Agent Minimal Test Configuration
+# Only contains the minimum required fields
+
+api_key=minimal_test_key
+model=gpt-4
