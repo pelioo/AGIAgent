@@ -1,5 +1,14 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:venv",
     "python.venvPath": "${workspaceFolder}",
-    "python.venv": ".venv"
+    "python.venv": ".venv",
+    
+    // --- 建议新增下面这两行 ---
+    
+    // 1. 强制指定解释器路径 (确保代码运行、调试、Linting 绝对使用 .venv)
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe", 
+    // 注意：如果是 Windows 系统，路径通常是 "${workspaceFolder}/.venv/Scripts/python.exe"
+    
+    // 2. 强制终端自动激活 (打开终端时自动显示 (.venv))
+    "python.terminal.activateEnvironment": true
 }
