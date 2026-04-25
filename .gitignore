@@ -32,7 +32,6 @@ python/
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 
