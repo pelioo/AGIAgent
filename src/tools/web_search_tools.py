@@ -32,7 +32,7 @@ import datetime
 import base64
 import io
 
-# Import config_loader to get truncation length configuration
+# 导入 config_loader 以获取截断长度配置 
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config_loader import get_web_content_truncation_length, get_truncation_length, get_zhipu_search_api_key, get_zhipu_search_engine, get_language
@@ -79,7 +79,7 @@ def _check_playwright_available():
         # Handle other errors (like GLIBC issues)
         return False
 
-# Cache the playwright availability check result
+# 缓存 playwright 可用性检查结果 
 _PLAYWRIGHT_AVAILABLE = None
 
 def is_playwright_available():
@@ -90,7 +90,7 @@ def is_playwright_available():
     return _PLAYWRIGHT_AVAILABLE
 
 
-# Dynamically import Anthropic
+# 动态导入 Anthropic 
 def get_anthropic_client():
     """Dynamically import and return Anthropic client class"""
     try:
@@ -616,7 +616,7 @@ class WebSearchTools:
         try:
             print_current(f"🧠 Using LLM to extract relevant information for: {search_term}")
             
-            # Construct system prompt for content filtering
+            # 构建内容过滤的系统提示 
             system_prompt = """You are an expert at extracting relevant information from web content. Your task is to:
 
             1. Extract ONLY the information that is directly relevant to the search query
