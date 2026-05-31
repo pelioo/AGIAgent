@@ -1,542 +1,356 @@
-# AGI-Agent 系统架构说明文档
+# 架构详解指南
+
+> **最后更新**：2026-05-31
+
+---
 
 ## 目录
 
-1. [项目概览](#1-项目概览)
-2. [整体架构](#2-整体架构)
-3. [核心模块详解](#3-核心模块详解)
-4. [工具系统](#4-工具系统)
-5. [记忆系统](#5-记忆系统)
-6. [多智能体系统](#6-多智能体系统)
-7. [API调用系统](#7-api调用系统)
-8. [配置系统](#8-配置系统)
-9. [应用扩展](#9-应用扩展)
-10. [GUI模块架构](#10-gui模块架构)
-11. [MCP集成机制](#11-mcp集成机制)
-12. [Skill进化系统](#12-skill进化系统)
-13. [性能优化机制](#13-性能优化机制)
-14. [部署架构](#14-部署架构)
+- [架构概览](#架构概览)
+- [核心组件](#核心组件)
+- [数据流详解](#数据流详解)
+- [状态管理](#状态管理)
+- [异步模式](#异步模式)
 
 ---
 
-## 1. 项目概览
+## 架构概览
 
-### 1.1 简介
+### 系统架构图
 
-**AGI-Agent** 是一个开源的通用智能体平台，支持 Vibe Doc、Vibe Coding 和自然语言通用任务执行，采用 Manager + 多子Agent 的协作架构。
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        用户输入                                  │
+│                   (CLI / GUI / Python 库)                       │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    AGIAgentMain (src/main.py)                   │
+│                     ← 入口点，CLI 参数，交互式提示               │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              MultiRoundTaskExecutor                              │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ DebugRecorder     ← LLM 调用日志、消息优化              │   │
+│  │ TaskChecker       ← TASK_COMPLETED/INCOMPLETE 检测     │   │
+│  │ RoundSyncManager  ← 轮次同步管理                         │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  ToolExecutor (tool_executor.py)                │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ API Callers (api_callers/)                              │   │
+│  │   ├─ OpenAI（流式 / 非流式 / 标准）                      │   │
+│  │   └─ Claude（流式 / 非流式 / 标准）                      │   │
+│  │                                                        │   │
+│  │ MCP 集成                                                │   │
+│  │   ├─ FastMCP 封装                                       │   │
+│  │   └─ CLI-MCP 封装                                       │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  Tools (src/tools/__init__.py)                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ 40+ 内置工具（Mixin 多继承架构）                         │   │
+│  │                                                        │   │
+│  │ BaseTools          ← 基础工具                           │   │
+│  │ FileSystemTools    ← 文件操作                           │   │
+│  │ TerminalTools      ← 命令执行                           │   │
+│  │ WebSearchTools     ← 网页搜索                           │   │
+│  │ CodeSearchTools    ← 代码导航                           │   │
+│  │ ImageGenerationTools ← 图像生成                        │   │
+│  │ MouseTools         ← 鼠标操作                           │   │
+│  │ HelpTools          ← 帮助系统                           │   │
+│  │ ...                                                    │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Experience 模块                               │
+│              ← TF-IDF 向量化实现的长期记忆                       │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-### 1.2 核心特性
+---
 
-| 特性 | 描述 |
+## 核心组件
+
+### 1. 入口点
+
+| 文件 | 说明 |
 |------|------|
-| **多模型支持** | OpenAI GPT、Claude、DeepSeek V3、Kimi K2、GLM、Qwen 等 |
-| **多模式运行** | GUI 网页界面 / CLI 命令行 / Python 库嵌入 |
-| **跨平台** | Windows / Linux / macOS / ARM 嵌入式 |
-| **工具生态** | 40+ 内置工具 + MCP 扩展 |
-| **本地部署** | 完全本地化，数据隐私可控 |
+| `agia.py` | CLI 入口脚本，直接运行 |
+| `src/main.py` | 主程序，含 AGIAgentClient 库接口 |
+| `GUI/app.py` | Flask + SocketIO Web 应用 |
 
----
+### 2. ToolExecutor
 
-## 2. 整体架构
+**职责**：管理工具调用和 LLM 交互
 
-### 2.1 系统架构图
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          AGI-Agent 系统架构                              │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │                    用户交互层 (Interface Layer)                    │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐ │  │
-│  │  │   GUI/Web    │  │  CLI (agia.py)│  │  Python Library     │ │  │
-│  │  │  dashboard/  │  │    命令行入口   │  │  API 接口          │ │  │
-│  │  └──────────────┘  └──────────────┘  └──────────────────────┘ │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                    │                                      │
-│                                    ▼                                      │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │                    主程序层 (Main Layer)                           │  │
-│  │  ┌─────────────────────┐     ┌─────────────────────┐           │  │
-│  │  │   AGIAgentMain      │     │   AGIAgentClient    │           │  │
-│  │  │   (主程序类)         │     │   (库模式客户端)     │           │  │
-│  │  └─────────────────────┘     └─────────────────────┘           │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                    │                                      │
-│                                    ▼                                      │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │              多轮执行引擎 (Multi-Round Executor)                    │  │
-│  │  ┌──────────────────────────────────────────────────────────┐  │  │
-│  │  │              MultiRoundTaskExecutor                        │  │  │
-│  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │  │  │
-│  │  │  │ DebugRecorder│  │ TaskChecker │  │ RoundSyncManager │  │  │  │
-│  │  │  │ (调试记录)   │  │ (任务检查)   │  │ (轮次同步)     │  │  │  │
-│  │  │  └─────────────┘  └─────────────┘  └─────────────────┘  │  │  │
-│  │  └──────────────────────────────────────────────────────────┘  │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                    │                                      │
-│                                    ▼                                      │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │                    工具执行器 (Tool Executor)                       │  │
-│  │  ┌───────────────────────────────────────────────────────────┐   │  │
-│  │  │                      ToolExecutor                         │   │  │
-│  │  │  ┌───────────────┐  ┌───────────────┐  ┌──────────────┐ │   │  │
-│  │  │  │ MCP集成模块    │  │ API调用封装    │  │ 工具定义     │ │   │  │
-│  │  │  │ FastMCP/CLI  │  │ OpenAI/Claude │  │ prompts/*.json│ │   │  │
-│  │  │  └───────────────┘  └───────────────┘  └──────────────┘ │   │  │
-│  │  └───────────────────────────────────────────────────────────┘   │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                    │                                      │
-│                                    ▼                                      │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │                      工具层 (Tools Layer)                          │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐     │  │
-│  │  │  文件系统工具  │  │  代码执行工具 │  │  网络搜索工具     │     │  │
-│  │  │ file_tools   │  │ terminal_tools│  │ web_search_tools  │     │  │
-│  │  └──────────────┘  └──────────────┘  └────────────────────┘     │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐     │  │
-│  │  │  图像处理工具 │  │  多智能体工具 │  │  记忆管理工具     │     │  │
-│  │  │ image_tools  │  │ multiagents  │  │ long_term_memory  │     │  │
-│  │  └──────────────┘  └──────────────┘  └────────────────────┘     │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                    │                                      │
-│                                    ▼                                      │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │                    API 层 (API Callers)                            │  │
-│  │  ┌─────────────────────┐              ┌─────────────────────┐   │  │
-│  │  │  OpenAI API Caller │              │  Claude API Caller  │   │  │
-│  │  │  streaming/non     │              │  streaming/non      │   │  │
-│  │  └─────────────────────┘              └─────────────────────┘   │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────┘
+**核心属性**：
+```python
+class ToolExecutor:
+    tool_map          # 工具名称 → 方法的映射
+    tool_source_map   # 工具名称 → 来源（regular/fastmcp/cli_mcp）
+    messages          # 消息历史
+    api_caller        # API 调用器
 ```
 
-### 2.2 执行流程 (ReAct 模式)
+**关键方法**：
+- `execute_tool(tool_name, **kwargs)` — 执行工具
+- `call_llm(messages)` — 调用 LLM
+- `should_summarize()` — 判断是否需要摘要
 
-```
-┌─────────────────────────────────────────────────────┐
-│          ReAct 执行循环 (Plan → Act → Observe)        │
-├─────────────────────────────────────────────────────┤
-│                                                      │
-│    ┌───────────────────────┐                        │
-│    │    1. Plan (计划)     │                        │
-│    │ 需求 → 分解 → plan.md │                        │
-│    └───────────┬───────────┘                        │
-│                ▼                                    │
-│    ┌───────────────────────┐                        │
-│    │    2. Act (执行)     │                        │
-│    │ LLM → 工具调用 → 执行 │                        │
-│    └───────────┬───────────┘                        │
-│                ▼                                    │
-│    ┌───────────────────────┐                        │
-│    │   3. Observe (观察)   │                        │
-│    │ 结果 → 终止检查 → 反馈 │                        │
-│    └───────────┬───────────┘                        │
-│                ▼                                    │
-│          任务完成 / 继续循环                         │
-│       (默认50轮迭代)                                │
-└─────────────────────────────────────────────────────┘
-```
+### 3. MultiRoundTaskExecutor
 
----
+**职责**：编排多轮任务循环
 
-## 3. 核心模块详解
+**核心组件**：
+- `DebugRecorder` — 记录 LLM 调用日志
+- `TaskChecker` — 检测任务完成标志
+- `RoundSyncManager` — 管理轮次同步
 
-### 3.1 入口模块 (agia.py)
+### 4. Tools 系统
+
+**架构**：Mixin 多继承
 
 ```python
-main()
-├── 参数解析 (argparse)
-│   ├── -r/--requirement: 用户需求
-│   ├── -d/--dir: 输出目录
-│   ├── -l/--loops: 执行轮数 (默认100, -1无限)
-│   ├── --app: 应用模式 (colordoc/patent/childedu)
-│   ├── --plan: 计划模式
-│   └── --continue: 继续上次任务
-└── 初始化
-    ├── AGIAgentMain 实例化
-    └── global_cleanup() 注册
+class Tools(BaseTools, FileSystemTools, TerminalTools,
+            WebSearchTools, CodeSearchTools, HelpTools,
+            MouseTools, ImageGenerationTools,
+            OptionalMCPKnowledgeBaseTools, OptionalPluginTools):
+    pass
 ```
 
-### 3.2 主程序模块 (src/main.py)
-
-**AGIAgentMain 类**：
-
-| 方法 | 功能 |
-|------|------|
-| `run()` | 主入口 |
-| `execute_single_task()` | 单任务执行 |
-| `execute_plan_mode()` | 计划模式 |
-| `_handle_task_completion()` | 任务完成处理 |
-
-### 3.3 多轮执行引擎
-
+**工具注册流程**：
 ```
-MultiRoundTaskExecutor
-├── ToolExecutor 初始化
-├── DebugRecorder (调试记录)
-├── TaskChecker (任务检查)
-└── RoundSyncManager (轮次同步)
+prompts/tool_prompt.json
+       ↓
+HelpTools._load_tool_definitions()
+       ↓
+ToolExecutor.register_tools()
+       ↓
+tool_map[tool_name] = tool_method
 ```
 
-### 3.4 工具执行器 (src/tool_executor.py)
+### 5. Experience 模块
+
+**职责**：长期记忆管理
+
+**核心组件**：
+- `ExperienceManager` — TF-IDF 向量存储
+- `TaskReflection` — 任务回顾分析
+
+---
+
+## 数据流详解
+
+### ReAct 循环流程
+
+```
+┌─────────────┐
+│   用户输入   │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────────────────────────────────────────┐
+│                   ReAct 循环                             │
+│                                                          │
+│   ┌─────────┐    ┌─────────┐    ┌─────────┐           │
+│   │  计划   │ →  │  执行   │ →  │  观察   │           │
+│   │ (Plan)  │    │  (Act)  │    │(Observe)│           │
+│   └────┬────┘    └────┬────┘    └────┬────┘           │
+│        │             │             │                   │
+│        └─────────────┴─────────────┘                   │
+│                       │                                 │
+│                       ▼                                 │
+│              ┌───────────────┐                         │
+│              │   判断结果     │                         │
+│              └───────┬───────┘                         │
+│                      │                                 │
+│        ┌─────────────┼─────────────┐                   │
+│        ▼             ▼             ▼                   │
+│   TASK_COMPLETED  继续循环    TASK_INCOMPLETE          │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 单轮执行流程
+
+```python
+def single_round():
+    # 1. 构建消息
+    messages = build_messages(user_input, context)
+    
+    # 2. 调用 LLM
+    response = llm.call(messages)
+    
+    # 3. 解析工具调用
+    tool_calls = parse_tool_calls(response)
+    
+    # 4. 执行工具
+    for tool_call in tool_calls:
+        result = execute_tool(tool_call)
+    
+    # 5. 检查任务状态
+    if check_task_completed(result):
+        return "TASK_COMPLETED"
+    else:
+        return "CONTINUE"
+```
+
+---
+
+## 状态管理
+
+### 三层状态架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    状态管理层                           │
+├──────────────┬──────────────────┬──────────────────────┤
+│   短期记忆    │     长期记忆      │     GUI 状态        │
+├──────────────┼──────────────────┼──────────────────────┤
+│ ToolExecutor │ ExperienceManager │ ConcurrencyManager  │
+│              │                  │                     │
+│ - 消息历史   │ - TF-IDF 向量     │ - 任务跟踪          │
+│ - 上下文     │ - 任务回顾        │ - 超时管理          │
+│ - 会话数据   │ - 经验学习        │ - 连接管理          │
+└──────────────┴──────────────────┴──────────────────────┘
+```
+
+### 消息历史管理
 
 ```python
 class ToolExecutor:
-    def __init__()
-    ├── _setup_llm_client()      # API客户端
-    ├── _initialize_mcp_async()  # MCP初始化
-    └── _add_mcp_tools_to_map()  # 添加工具
+    def __init__(self):
+        self.messages = []  # 消息历史
+        self.max_history = 100  # 最大历史条数
     
-    def execute_subtask()         # 执行子任务
-    ├── load_system_prompt()     # 加载提示
-    ├── _call_llm_with_tools()   # LLM调用
-    ├── parse_tool_calls()        # 解析工具
-    └── execute_tool()            # 执行工具
+    def should_summarize(self):
+        """判断是否需要压缩历史"""
+        return len(self.messages) > self.max_history
+    
+    def summarize(self):
+        """压缩消息历史"""
+        summary = self.llm.summarize(self.messages)
+        self.messages = [{"role": "system", "content": summary}]
 ```
 
----
-
-## 4. 工具系统
-
-### 4.1 三层工具体系
-
-| 层级 | 说明 |
-|------|------|
-| **内置工具** | 40+ 文件/代码/网络/图像工具 |
-| **OS工具** | 终端命令、pip/apt包管理 |
-| **MCP工具** | FastMCP/CLI扩展 |
-
-### 4.2 核心工具模块
-
-| 模块 | 功能 |
-|------|------|
-| `file_system_tools.py` | 文件读写、编辑、搜索 |
-| `terminal_tools.py` | 终端命令、Claude Shell |
-| `web_search_tools.py` | 网页搜索、内容抓取 |
-| `image_generation_tools.py` | 图像生成 |
-| `svg_processor.py` | SVG处理 |
-| `mermaid_processor.py` | Mermaid图生成 |
-| `multiagents.py` | 多智能体协作 |
-| `long_term_memory.py` | 长期记忆 |
-| `history_compression_tools.py` | 历史压缩 |
-| `mcp_client.py` | MCP协议集成 |
-
----
-
-## 5. 记忆系统
-
-### 5.1 双层记忆架构
-
-```
-短期记忆                    长期记忆
-├── TaskHistory          ├── LongTermMemoryManager
-│   └── 当前会话历史     │   └── 跨任务知识
-├── 历史压缩              └── MemManagerAgent
-└── 图像数据优化             └── 向量化存储
-```
-
-### 5.2 代码索引系统
+### GUI 状态管理
 
 ```python
-class CodeRepositoryParser:
-    def parse_repository()     # 索引构建
-    def vector_search()        # 语义搜索
-    def keyword_search()       # 关键词搜索
-    def hybrid_search()       # 混合搜索
-    def incremental_update()  # 增量更新
+class ConcurrencyManager:
+    max_tasks = 16        # 最大并发任务
+    max_connections = 40  # 最大连接数
+    task_timeout = 3600   # 60 分钟超时
+    idle_timeout = 1800   # 30 分钟空闲超时
 ```
 
 ---
 
-## 6. 多智能体系统
+## 异步模式
 
-### 6.1 Manager + 子Agent 架构
+### GUI 异步架构
 
 ```
-Manager (主智能体)
-├── 任务分解
-├── 状态监控
-└── 结果汇总
-       │
-       ├── agent_001 (码工)
-       ├── agent_002 (艺术)
-       └── agent_003 (具身)
-              │
-         Mailbox + Router
+┌─────────────────────────────────────────────────────────┐
+│                  Flask-SocketIO                         │
+│                       │                                 │
+│         ┌─────────────┴─────────────┐                   │
+│         ▼                           ▼                   │
+│   ┌──────────┐              ┌──────────┐              │
+│   │  gevent  │              │ threading│ ← 回退模式    │
+│   │ (主模式) │              │          │              │
+│   └──────────┘              └──────────┘              │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### 6.2 消息系统
+### API 调用异步模式
 
 ```python
-class MessageType(Enum):
-    STATUS_UPDATE = "status_update"   # 状态更新
-    TASK_REQUEST = "task_request"     # 任务请求
-    COLLABORATION = "collaboration"  # 协作
-    BROADCAST = "broadcast"           # 广播
+# 流式调用
+async def stream_call(messages):
+    async for chunk in openai_stream(messages):
+        yield chunk
 
-class MessageRouter:
-    def register_agent()      # 注册
-    def route_message()       # 路由
-    def broadcast_message()   # 广播
+# 非流式调用
+def non_stream_call(messages):
+    return openai.complete(messages)
 ```
 
----
-
-## 7. API调用系统
-
-### 7.1 API Caller 架构
-
-```
-src/api_callers/
-├── openai_chat_based_streaming.py      # OpenAI流式
-├── openai_chat_based_non_streaming.py  # OpenAI非流式
-├── openai_standard_tools.py             # OpenAI标准工具
-├── claude_chat_based_streaming.py       # Claude流式
-├── claude_chat_based_non_streaming.py  # Claude非流式
-└── claude_standard_tools.py            # Claude标准工具
-```
-
----
-
-## 8. 配置系统
-
-### 8.1 配置加载机制
+### 并发控制
 
 ```python
-# src/config_loader.py
-def load_config(config_file="config/config.txt", verbose=False):
-    """
-    带缓存的配置加载
-    - 支持文件修改时间检测
-    - 自动更新缓存
-    """
-    # 优先级: 环境变量 > 配置文件
-```
-
-### 8.2 配置项分类
-
-| 类别 | 配置项 |
-|------|--------|
-| **API配置** | `api_key`, `api_base`, `model` |
-| **执行参数** | `max_rounds`, `enable_thinking` |
-| **记忆配置** | `config_memory.txt` |
-| **MCP配置** | `mcp_servers.json` |
-
----
-
-## 9. 应用扩展
-
-### 9.1 apps/ 目录结构
-
-```
-apps/
-├── colordoc/          # 彩文文档写作平台
-│   ├── config.txt     # 特定配置
-│   ├── prompts/       # 特定提示词
-│   ├── routine/       # 写作模板
-│   └── app.json       # 应用清单
-├── patent/            # 专利写作助手
-└── childedu/          # 儿童教育应用
+class ConcurrencyManager:
+    def __init__(self):
+        self.semaphore = Semaphore(16)  # 最多 16 任务
+        self.connections = 0
+    
+    def acquire(self):
+        """获取执行权"""
+        self.semaphore.acquire()
+        self.connections += 1
+    
+    def release(self):
+        """释放执行权"""
+        self.semaphore.release()
+        self.connections -= 1
 ```
 
 ---
 
-## 10. GUI模块架构
+## MCP 集成
 
-### 10.1 目录结构
+### MCP 架构
 
 ```
-GUI/
-├── app.py                      # Flask主应用
-├── run_gui.py                  # 启动脚本
-├── auth_manager.py             # 认证管理
-├── app_manager.py              # 应用管理
-├── agent_status_visualizer.py  # 状态可视化
-├── templates/                  # HTML模板
-│   ├── index.html
-│   ├── register.html
-│   └── terminal.html
-├── static/                     # 静态资源
-│   ├── css/
-│   ├── js/
-│   └── logo.png
-└── deployment/                  # 部署脚本
-    └── monitor.py
+┌─────────────────────────────────────────────────────────┐
+│                   MCP 集成层                             │
+├────────────────────────┬────────────────────────────────┤
+│      FastMCP           │         CLI-MCP                │
+├────────────────────────┼────────────────────────────────┤
+│ Python 原生            │ 命令行封装                     │
+│ 持久化客户端           │ 进程管理                       │
+│ 健康监控               │ 状态检测                       │
+└────────────────────────┴────────────────────────────────┘
 ```
 
-### 10.2 核心组件
-
-| 组件 | 功能 |
-|------|------|
-| `app.py` | Flask主应用，路由处理 |
-| `auth_manager.py` | 用户认证、会话管理 |
-| `app_manager.py` | AGIAgent实例管理 |
-| `agent_status_visualizer.py` | 执行状态可视化 |
-
----
-
-## 11. MCP集成机制
-
-### 11.1 MCP客户端架构
+### MCP 工具注册
 
 ```python
-# src/tools/mcp_client.py
-class MCPClient:
-    """MCP客户端 - 支持多协议适配"""
-    
-    def __init__(config_path="config/mcp_servers.json"):
-        self._init_builtin_adapters()
-        # 百度搜索适配器
-        # 腾讯搜索适配器
-        # Elasticsearch适配器
-    
-    async def call_tool(tool_name, parameters):
-        # 协议转换
-        # SSE/HTTP调用
+# tool_source_map 配置
+tool_source_map = {
+    "internal_tool": "regular",      # 内置工具
+    "mcp_tool_a": "fastmcp",         # FastMCP 工具
+    "mcp_tool_b": "cli_mcp",         # CLI-MCP 工具
+}
 ```
 
-### 11.2 FastMCP包装器
+### MCP 回退策略
 
 ```python
-# src/tools/fastmcp_wrapper.py
-class FastMcpWrapper:
-    """FastMCP持久化服务管理"""
-    
-    def __init__(config_path, workspace_dir):
-        self.servers = {}        # 服务实例
-        self.available_tools = {} # 可用工具
-    
-    async def initialize():
-        # 加载配置
-        # 发现工具
-        # 启动服务
-    
-    async def call_tool(tool_name, arguments):
-        # 工具调用
-```
-
-### 11.3 协议适配器系统
-
-```python
-class ProtocolAdapter:
-    """自定义协议适配器"""
-    
-    def request_transformer(tool_name, parameters):
-        # 转换请求格式
-    
-    def response_transformer(data):
-        # 转换响应格式
+def execute_mcp_tool(tool_name, **kwargs):
+    try:
+        # 尝试 FastMCP
+        return fastmcp_client.call(tool_name, **kwargs)
+    except MCPConnectionError:
+        # 回退到 CLI-MCP
+        try:
+            return cli_mcp_client.call(tool_name, **kwargs)
+        except Exception:
+            # 回退到内置工具
+            return fallback_to_builtin(tool_name, **kwargs)
 ```
 
 ---
 
-## 12. Experience进化系统
-
-### 12.1 Experience管理器
-
-```python
-# src/experience/experience_manager.py
-class ExperienceManager:
-    """Experience整理管理器"""
-    
-    def merge_similar_experiences()    # 合并相似experience
-    def cleanup_unused_experiences()   # 清理无用experience
-    def cross_integrate()         # 跨experience整合
-```
-
-### 12.2 Experience工具
-
-```python
-# src/experience/experience_tools.py
-class ExperienceTools:
-    """Experience管理与经验总结"""
-    
-    def list_experiences()             # 列出experience
-    def get_experience_details()       # 获取详情
-    def evaluate_experience()         # 评价experience
-    def update_experience()           # 更新experience
-    
-    # 中文分词 (jieba)
-    # TF-IDF相似度计算
-```
-
----
-
-## 13. 性能优化机制
-
-### 13.1 延迟导入优化
-
-```python
-# 重量级库延迟加载
-def _ensure_lazy_imports():
-    """首次使用时加载numpy、sklearn"""
-    global np, TfidfVectorizer
-    if not _LAZY_IMPORTS_LOADED:
-        import numpy as np
-        from sklearn.feature_extraction.text import TfidfVectorizer
-```
-
-### 13.2 缓存机制
-
-```python
-# 配置缓存
-_config_cache: Dict[str, Dict[str, str]] = {}
-_config_file_mtime: Dict[str, float] = {}
-
-def load_config(config_file):
-    # 检查文件修改时间
-    # 有效则使用缓存
-```
-
-### 13.3 资源清理优化
-
-```python
-# 只清理已加载的模块
-def cleanup():
-    if 'src.tools.fastmcp_wrapper' in sys.modules:
-        safe_cleanup_fastmcp_wrapper()
-```
-
----
-
-## 14. 部署架构
-
-### 14.1 部署模式
-
-| 模式 | 说明 |
-|------|------|
-| **本地CLI** | `python agia.py` |
-| **Web GUI** | `python GUI/app.py` |
-| **Python库** | `from agia import create_client` |
-| **云端部署** | Docker + Web服务 |
-
-### 14.2 依赖要求
-
-```
-Python 3.8+
-├── anthropic          # Claude API
-├── openai             # OpenAI API
-├── fastmcp           # MCP支持
-├── playwright         # 网页抓取
-├── jieba             # 中文分词
-└── scikit-learn      # TF-IDF
-```
-
----
-
-## 附录：技术栈总结
-
-| 类别 | 技术 |
-|------|------|
-| **语言** | Python 3.8+ |
-| **框架** | Flask (GUI), asyncio |
-| **AI模型** | OpenAI/Claude/国产模型 |
-| **协议** | MCP (Model Context Protocol) |
-| **搜索** | TF-IDF + 向量化 |
-| **部署** | Docker / 云端 |
-
----
-
-*文档版本: 1.0*
-*更新时间: 2026-04-04*
+*返回 [AGENTS.md](../AGENTS.md)*
