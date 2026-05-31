@@ -1,15 +1,10 @@
 # AGI-Agent 项目指南
 
-> **最后更新**：2026-05-31
-> **适用版本**：v1.x
-
----
-
 ## TL;DR 快速参考
 
-**项目是什么**：通用 AI Agent 平台，支持流式 LLM、多 Agent 协作、长期记忆（TF-IDF）、可扩展工具系统。
+**项目是什么**：通用 AI Agent 平台，支持流式 LLM、多 Agent 协作、长期记忆（TF-IDF）、经验系统、可扩展工具系统。
 
-**核心工作原则**（⚠️ **强制要求，不可违背**）：
+**核心工作原则**（**强制要求，不可违背**）：
 
 | # | 原则 | 说明 |
 |---|------|------|
@@ -19,14 +14,14 @@
 | 4 | **ReAct 循环** | 计划 → 分配/执行 → 观察 → 判断，直到 TASK_COMPLETED |
 | 5 | **任务完成标志** | 必须输出 `TASK_COMPLETED` 或 `TASK_INCOMPLETE` |
 
-**⚠️ 违反上述原则 = 错误执行，后果自负**
+**违反上述原则 = 错误执行，后果自负**
 
-**快速开始**：
+**开始**：
 ```powershell
 # 安装（自动创建 .venv 虚拟环境）
 install.bat
 
-# 运行（使用虚拟环境中的 Python）
+# 运行（使用虚拟环境）
 .venv\Scripts\python.exe agia.py "你的任务"
 ```
 
@@ -34,9 +29,9 @@ install.bat
 
 ---
 
-## 主 Agent 角色定位：CEO/指挥官 🏢
+## 主 Agent 角色定位：CEO/指挥官
 
-> **⚠️ 核心原则：主 Agent 绝不亲力亲为，只做规划、思考、分配、管理**
+> **核心原则：主 Agent 绝不亲力亲为，只做规划、思考、分配、管理**
 
 ### 角色定义
 
@@ -60,7 +55,7 @@ install.bat
 | **分配** | 指派任务给执行者 | 使用 Subagent 或 Skills 并行执行子任务 |
 | **管理** | 监督进度，整合结果 | 跟踪子任务状态，汇总最终输出 |
 
-### 强制决策流程（⚠️ 必须遵守）
+### 强制决策流程（必须遵守）
 
 ```
 收到任务
@@ -86,7 +81,7 @@ install.bat
 └─────────────────────────────────────────────────────────┘
 ```
 
-### ⚠️ 强制要求
+### 强制要求
 
 | 要求 | 说明 |
 |------|------|
@@ -95,7 +90,7 @@ install.bat
 | **必须并行** | 独立子任务必须并行执行，而非顺序执行 |
 | **禁止跳过** | 禁止跳过「评估 → 分配 → 管理」流程直接执行 |
 
-### ❌ 严格禁止的行为
+### 严格禁止的行为
 
 | 禁止行为 | 原因 | 违反后果 |
 |----------|------|----------|
@@ -117,7 +112,7 @@ install.bat
 
 ---
 
-## Agent 核心约束
+## 核心约束
 
 ### 必须遵守的规则
 
@@ -131,7 +126,7 @@ install.bat
 
 ### 禁止操作
 
-| ❌ 禁止 | 说明 |
+| 禁止 | 说明 |
 |--------|------|
 | 删除项目根目录外的文件 | 除非用户明确要求 |
 | 未经确认执行危险系统命令 | 如 rm -rf、format 等 |
@@ -141,8 +136,8 @@ install.bat
 
 ### 路径规范
 
-- ✅ 始终使用相对于项目根的路径
-- ✅ 使用 Python 的 `pathlib` 或 `os.path` 处理跨平台路径
+- 始终使用相对于项目根的路径
+- 使用 Python 的 `pathlib` 或 `os.path` 处理跨平台路径
 
 ### 系统限制
 
@@ -160,35 +155,49 @@ install.bat
 
 ### 文件操作决策
 
+需要操作文件时，使用对应的 pi 工具：
+
 ```
 需要操作文件时：
 │
-├─ 搜索内容 → grep_search
-├─ 查看内容 → read_file（用 s/l 限制范围）
-├─ 小幅修改 → edit_file（精确替换）
-├─ 大量重写 → write_file
-├─ 创建新文件 → write_file
-└─ 批量操作 → 先 list_dir 再遍历
+├─ 搜索内容 → bash (rg/grep)
+├─ 查看内容 → read（用 s/l 限制范围）
+├─ 小幅修改 → edit（精确替换）
+├─ 大量重写/创建 → write
+└─ 批量操作 → batch（多个读写并行）
 ```
+
+**实际工具速查**：
+
+| 操作类型 | 工具 | 示例 |
+|----------|------|------|
+| 搜索内容 | `bash` | `bash("rg 'pattern' .")` |
+| 查看文件 | `read` | `read(path="file.py", s=1, l=50)` |
+| 小幅修改 | `edit` | `edit(edits=[{oldText, newText}], path)` |
+| 大量重写 | `write` | `write(content, path)` |
+| 创建新文件 | `write` | `write(content, path)` |
+| 批量操作 | `batch` | 同时读写多个文件 |
 
 ### 工具选择
 
-| 场景 | 推荐 | 备选 |
-|------|------|------|
-| 代码搜索 | `grep_search` | `read_file` + 手动 |
-| 网页搜索 | `web_search` | `browser_automation` |
-| 命令执行 | `run_terminal_cmd` | `powershell` |
-| 图像生成 | `create_img` | — |
-| 获取帮助 | `help` | `prompts/tool_prompt.json` |
+| 场景 | 推荐 | 备选/说明 |
+|------|------|----------|
+| 代码搜索 | `bash` (rg) | `read` + 手动 |
+| 网页搜索 | `search` skill | `agent-reach` skill |
+| 浏览器交互 | `agent-browser` skill | `web-scraper` skill |
+| 命令执行 | `bash` | — |
+| 图像生成 | `frontend-skill` | — |
+| 复杂任务 | `subagent` | 分配给专用 agent |
 
 ### 回退策略
 
 | 场景 | 回退行为 |
 |------|----------|
-| MCP 工具连接失败 | 回退到内置工具集 |
+| MCP 工具连接失败 | 回退到内置工具集（read/write/edit/bash/batch） |
 | API 调用超时 | 重试 1 次，仍失败返回错误 |
 | 消息历史过长 | 自动压缩摘要 |
 | 配置项缺失 | 使用默认值并记录警告 |
+| Skill 不可用 | 使用基础工具组合替代 |
 
 ---
 
@@ -202,10 +211,10 @@ install.bat
 
 | 条件 | 结果 |
 |------|------|
-| 输出 `TASK_COMPLETED` | ✅ 任务完成 |
-| 输出 `TASK_INCOMPLETE` | ⚠️ 未完成，需继续 |
-| 达到 20 轮上限 | ⚠️ 强制结束 |
-| 连续 3 次相同错误 | 🔄 切换策略 |
+| 输出 `TASK_COMPLETED` | 任务完成 |
+| 输出 `TASK_INCOMPLETE` | 未完成，需继续 |
+| 达到 20 轮上限 | 强制结束 |
+| 连续 3 次相同错误 | 切换策略 |
 
 ### 遇到不确定
 
@@ -216,7 +225,7 @@ install.bat
 
 ---
 
-## 运行环境要求 ⚠️
+## 运行环境要求
 
 | 要求 | 说明 |
 |------|------|
@@ -224,19 +233,19 @@ install.bat
 | **虚拟环境** | 使用 `.venv/`（通过 `install.bat` 自动创建） |
 | **依赖管理** | 通过虚拟环境管理，不依赖系统 Python |
 
-**⚠️ 重要**：始终使用 `.venv\Scripts\python.exe` 而非系统 Python。
+**重要**：使用 `.venv\Scripts\python.exe` 非系统 Python。
 
 ---
 
 ## 关键指引
 
-### 快速开始
+### 开始
 
 ```powershell
 # 安装（自动创建 .venv 虚拟环境）
 install.bat
 
-# CLI 模式（使用虚拟环境中的 Python）
+# CLI 模式（使用虚拟环境）
 .venv\Scripts\python.exe agia.py "你的任务"
 
 # 指定目录
@@ -263,26 +272,18 @@ install.bat
 
 ### 子文档索引
 
-详细说明请参阅：
+详细请参阅：
 
 | 子文档 | 内容 |
 |--------|------|
 | [docs/SETUP.md](docs/SETUP.md) | 环境配置详细说明 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 架构详解与数据流 |
+| [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | 项目目录结构说明 |
 | [docs/REFERENCE.md](docs/REFERENCE.md) | 文件索引、配置说明、命令参考 |
 | [docs/TROUBLESHOOT.md](docs/TROUBLESHOOT.md) | 故障排查与常见问题 |
 | [docs/TOOLS.md](docs/TOOLS.md) | 工具列表与使用说明 |
 
 ---
-
-## 支持的模型
-
-- OpenAI（GPT-4o 等）
-- Claude
-- DeepSeek
-- GLM
-- Qwen
-- Kimi
 
 ## 技术栈
 
