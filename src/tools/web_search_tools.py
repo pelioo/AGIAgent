@@ -1225,8 +1225,9 @@ class WebSearchTools:
                                         raise nav_error
 
                             # Wait longer for page to stabilize and load results
-                            # Baidu needs more time to load all results
-                            wait_time = 3500 if engine['name'].startswith('Baidu') else 1500
+                            # Optimized wait time for faster results
+                            # Baidu needs slightly more time, others can be faster
+                            wait_time = 2000 if engine['name'].startswith('Baidu') else 800
                             page.wait_for_timeout(wait_time)
                             
                             # Skip scrolling for faster results (removed lazy loading scroll)
@@ -2123,7 +2124,7 @@ class WebSearchTools:
             print_debug(f"📥 [{global_index+1}] Starting download: {target_url}")
 
             # 使用 requests 下载网页（增加超时时间以提高成功率）
-            html_content, final_url, title = self._download_webpage_with_requests(target_url, timeout=30.0, debug_index=global_index+1)
+            html_content, final_url, title = self._download_webpage_with_requests(target_url, timeout=15.0, debug_index=global_index+1)  # 15s超时
 
             if not html_content:
                 print_debug(f"❌ [{global_index+1}] Download failed - no HTML content: {target_url}")
@@ -2288,9 +2289,7 @@ class WebSearchTools:
         # 使用 ThreadPoolExecutor 并行下载
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import threading
-        
-        # 最多同时下载 5 个页面
-        max_workers = min(5, len(urls_to_download))
+        max_workers = min(10, len(urls_to_download))  # 增加到10个线程并行下载
         
         print_debug(f"🚀 Starting parallel download with {max_workers} workers for {len(urls_to_download)} pages...")
 
