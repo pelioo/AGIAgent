@@ -1224,10 +1224,10 @@ class WebSearchTools:
                                         print_current(f"❌ {engine['name']} navigation failed after 2 attempts")
                                         raise nav_error
 
-                            # Wait longer for page to stabilize and load results
-                            # Optimized wait time for faster results
-                            # Baidu needs slightly more time, others can be faster
-                            wait_time = 2000 if engine['name'].startswith('Baidu') else 800
+                            # 性能优化：降低等待时间以加快结果返回
+                            # 权衡：可能遗漏慢页面，但整体用户体验更好
+                            # 如果搜索结果不完整，考虑增加等待时间
+                            wait_time = 2000 if engine['name'].startswith('Baidu') else 1500
                             page.wait_for_timeout(wait_time)
                             
                             # Skip scrolling for faster results (removed lazy loading scroll)
@@ -2124,12 +2124,13 @@ class WebSearchTools:
             print_debug(f"📥 [{global_index+1}] Starting download: {target_url}")
 
             # 使用 requests 下载网页（增加超时时间以提高成功率）
-            html_content, final_url, title = self._download_webpage_with_requests(target_url, timeout=15.0, debug_index=global_index+1)  # 15s超时
+            download_timeout = 15.0  # 超时时间（秒）
+            html_content, final_url, title = self._download_webpage_with_requests(target_url, timeout=download_timeout, debug_index=global_index+1)
 
             if not html_content:
                 print_debug(f"❌ [{global_index+1}] Download failed - no HTML content: {target_url}")
                 print_debug(f"   Final URL: {final_url}")
-                result['content'] = f"Failed to download webpage (timeout 30s)"
+                result['content'] = f"Failed to download webpage (timeout {int(download_timeout)}s)"
                 result['success'] = False
                 return result
             
@@ -2286,10 +2287,10 @@ class WebSearchTools:
         
         print_debug("📥 Phase 2: Using requests for parallel content download (thread-safe)")
         
-        # 使用 ThreadPoolExecutor 并行下载
+        # 使用 ThreadPoolExecutor 并行下载（适度并发减少封禁风险）
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import threading
-        max_workers = min(10, len(urls_to_download))  # 增加到10个线程并行下载
+        max_workers = min(8, len(urls_to_download))
         
         print_debug(f"🚀 Starting parallel download with {max_workers} workers for {len(urls_to_download)} pages...")
 
