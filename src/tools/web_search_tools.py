@@ -37,8 +37,6 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config_loader import get_web_content_truncation_length, get_truncation_length, get_zhipu_search_api_key, get_zhipu_search_engine, get_language
 
 
-import time
-
 
 def is_windows():
     """Check if running on Windows"""
@@ -524,11 +522,12 @@ class WebSearchTools:
                             print_debug(f"⚠️ Skipped saving text file for: {title[:50]}... (content length: {len(content)}, cleaned length: {len(cleaned_content.strip()) if cleaned_content else 0})")
                 else:
                     print_debug(f"⚠️ No text content to save for: {title[:50]}... (content is empty or whitespace only)")
-            except TimeoutError as timeout_err:
-                print_current(f"⚠️ Save text content timeout: {timeout_err}, continuing without txt file")
-                txt_filepath = ""  # Ensure we return empty string on timeout
             except Exception as e:
-                print_current(f"⚠️ Failed to save text content: {e}, continuing without txt file")
+                # Handle timeout case specifically (though TimeoutError is no longer used with new time.time() approach)
+                if "timeout" in str(e).lower():
+                    print_current(f"⚠️ Save text content timeout, continuing without txt file")
+                else:
+                    print_current(f"⚠️ Failed to save text content: {e}, continuing without txt file")
                 txt_filepath = ""  # Ensure we return empty string on error
             
             return html_filepath, txt_filepath
@@ -1190,6 +1189,10 @@ class WebSearchTools:
                     encoded_term = urllib.parse.quote_plus(optimized_search_term)
                         
                     for engine_idx, engine in enumerate(search_engines):
+                        # 检查总时长是否超限（优雅超时替代signal.alarm）
+                        if time.time() - overall_start_time > MAX_SEARCH_DURATION:
+                            print_debug(f"Search duration exceeded max ({MAX_SEARCH_DURATION}s), stopping gracefully")
+                            break
                         try:
                             # Skip this engine if it has failed before
                             if engine['name'] in self.failed_engines:
@@ -1737,35 +1740,37 @@ class WebSearchTools:
                     'error': str(playwright_error)
                 }
         
-        except TimeoutError:
-            return {
-                'status': 'failed',
-                'search_term': search_term,
-                'results': [{
-                    'title': f'Search timeout: {search_term}',
-                    'url': '',
-                    'snippet': self._clean_snippet('Web search operation timed out after 90 seconds. This may be due to slow network or search engines blocking requests. Please try again or use a different search term.'),
-                    'content': 'Search operation timed out'
-                }],
-                'timestamp': datetime.datetime.now().isoformat(),
-                'error': 'search_timeout'
-            }
-        
         except Exception as e:
-            print_current(f"Web search failed: {e}")
-            return {
-                'status': 'failed',
-                'search_term': search_term,
-                'results': [{
-                    'title': f'Search error: {search_term}',
-                    'url': '',
-                    'snippet': self._clean_snippet(f'Web search failed with error: {str(e)}'),
-                    'content': f'Search error: {str(e)}'
-                }],
-                'timestamp': datetime.datetime.now().isoformat(),
-                'error': str(e)
-            }
-        
+            # Handle timeout case specifically (though TimeoutError is no longer used with new time.time() approach)
+            error_str = str(e).lower()
+            if "timeout" in error_str:
+                print_current(f"⚠️ Web search timeout: {search_term}")
+                return {
+                    'status': 'failed',
+                    'search_term': search_term,
+                    'results': [{
+                        'title': f'Search timeout: {search_term}',
+                        'url': '',
+                        'snippet': self._clean_snippet('Web search operation timed out. This may be due to slow network or search engines blocking requests. Please try again or use a different search term.'),
+                        'content': 'Search operation timed out'
+                    }],
+                    'timestamp': datetime.datetime.now().isoformat(),
+                    'error': 'search_timeout'
+                }
+            else:
+                print_current(f"Web search failed: {e}")
+                return {
+                    'status': 'failed',
+                    'search_term': search_term,
+                    'results': [{
+                        'title': f'Search error: {search_term}',
+                        'url': '',
+                        'snippet': self._clean_snippet(f'Web search failed with error: {str(e)}'),
+                        'content': f'Search error: {str(e)}'
+                    }],
+                    'timestamp': datetime.datetime.now().isoformat(),
+                    'error': str(e)
+                }
         finally:
             # Emergency browser cleanup
             if browser:
@@ -2321,11 +2326,15 @@ class WebSearchTools:
             completed_count = 0
             
             for future in as_completed(future_to_info):
+                # 检查总时长是否超限（优雅超时替代signal.alarm）
+                if time.time() - start_time > timeout_seconds:
+                    print_debug(f"⏰ Content fetching timeout reached during processing, stopping")
+                    break
                 completed_count += 1
                 result, global_index, target_url = future_to_info[future]
-                
                 try:
                     # 获取下载结果（result 已经被更新）
+                    # 注意：future.result() 没有超时参数，但下载函数内部有30s超时
                     updated_result = future.result()
                     
                     # 打印进度（线程安全）
@@ -3943,7 +3952,6 @@ Cleaned Content Length: {len(cleaned_content)} characters
                             '--allow-running-insecure-content'
                         ]
                     )
-                    
                     # 使用桌面版 User Agent 提高性能和兼容性
                     context = browser.new_context(
                         user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -3954,6 +3962,14 @@ Cleaned Content Length: {len(cleaned_content)} characters
                         locale='en-US',
                         timezone_id='America/New_York'
                     )
+                except Exception as launch_error:
+                    # 确保浏览器资源被清理即使启动或上下文创建失败
+                    if browser:
+                        try:
+                            browser.close()
+                        except:
+                            pass
+                    raise launch_error
                 finally:
                     # Restore original DISPLAY if it existed
                     if original_display is not None:
@@ -3968,10 +3984,23 @@ Cleaned Content Length: {len(cleaned_content)} characters
                         route.abort()
                     else:
                         route.continue_()
-                
                 page.route('**/*', block_resources)
                 print_debug("🚀 Performance optimization: blocking images, CSS, fonts, and media")
-                
+                # 检查总时长是否超限（优雅超时替代signal.alarm）
+                if time.time() - op_start_time > MAX_OP_DURATION:
+                    print_debug(f"Content fetch duration exceeded max ({MAX_OP_DURATION}s), stopping gracefully")
+                    # 确保浏览器资源被清理
+                    if browser:
+                        try:
+                            browser.close()
+                        except:
+                            pass
+                    return {
+                        'error': 'Operation timed out',
+                        'status': 'timeout',
+                        'url': url,
+                        'timestamp': datetime.datetime.now().isoformat()
+                    }
                 # Use optimized timeout for faster processing
                 final_timeout = 10000
                 
@@ -4050,20 +4079,26 @@ Cleaned Content Length: {len(cleaned_content)} characters
                 'status': 'error'
             }
         
-        except TimeoutError:
-            return {
-                'error': 'Operation timed out after 30 seconds',
-                'status': 'timeout'
-            }
-        
         except Exception as e:
+            # Handle timeout case specifically (though TimeoutError is no longer used with new time.time() approach)
+            error_str = str(e).lower()
+            if "timeout" in error_str:
+                return {
+                    'error': 'Operation timed out',
+                    'status': 'timeout'
+                }
             return {
                 'error': str(e),
                 'status': 'error'
             }
         
         finally:
-            pass  # 时间戳控制，无需额外清理
+            # Ensure browser is closed even on exceptions
+            if browser:
+                try:
+                    browser.close()
+                except:
+                    pass
 
 
     def _normalize_url(self, url: str) -> str:
@@ -4461,7 +4496,6 @@ Cleaned Content Length: {len(cleaned_content)} characters
                             '--disable-ipc-flooding-protection'
                         ]
                     )
-                    
                     context = browser.new_context(
                         user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                         viewport={'width': 1366, 'height': 768},
@@ -4469,6 +4503,14 @@ Cleaned Content Length: {len(cleaned_content)} characters
                         java_script_enabled=True,
                         bypass_csp=True
                     )
+                except Exception as launch_error:
+                    # 确保浏览器资源被清理即使启动或上下文创建失败
+                    if browser:
+                        try:
+                            browser.close()
+                        except:
+                            pass
+                    raise launch_error
                 finally:
                     # Restore original DISPLAY
                     if original_display is not None:
@@ -4511,10 +4553,12 @@ Cleaned Content Length: {len(cleaned_content)} characters
                     'image_found': False
                 }
                 
+                timeout_occurred = False
                 for engine in search_engines:
                     # 检查总时长是否超限（优雅超时替代signal.alarm）
                     if time.time() - op_start_time > MAX_OP_DURATION:
                         print_debug(f"Image search duration exceeded max ({MAX_OP_DURATION}s), stopping gracefully")
+                        timeout_occurred = True
                         break
                     
                     try:
@@ -4593,7 +4637,6 @@ Cleaned Content Length: {len(cleaned_content)} characters
                                 thumbnail_url = selected_image['src']
                                 
                                 
-                                import time
                                 image_start_time = time.time()
                                 max_image_time = 3.0  # 增加图片处理时间到3秒 
                                 
@@ -4782,8 +4825,15 @@ Cleaned Content Length: {len(cleaned_content)} characters
                         continue
                 
                 browser.close()
-                
-                if not image_found:
+                # 如果超时发生，更新结果状态
+                if timeout_occurred:
+                    result_data.update({
+                        'status': 'timeout',
+                        'error': f'Image search timed out after {MAX_OP_DURATION} seconds',
+                        'suggestion': 'Please try again or use fewer images'
+                    })
+                    print_current(f"Image search timed out: {query}")
+                elif not image_found:
                     result_data.update({
                         'error': 'No valid images found',
                         'suggestion': 'Please try using more specific search keywords, or check your network connection'
