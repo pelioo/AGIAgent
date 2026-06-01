@@ -86,6 +86,11 @@ def get_anthropic_client():
 
 
 class WebSearchTools:
+    # 性能参数常量（集中管理，便于调优）
+    BAIDU_WAIT_TIME_MS = 2000       # 百度引擎页面等待时间（毫秒）
+    DEFAULT_WAIT_TIME_MS = 1500    # 其他引擎页面等待时间（毫秒）
+    DOWNLOAD_TIMEOUT_SEC = 15.0     # 网页下载超时时间（秒）
+    MAX_PARALLEL_WORKERS = 8        # 并行下载最大线程数
     def __init__(self, llm_api_key: str = None, llm_model: str = None, llm_api_base: str = None, enable_llm_filtering: bool = False, enable_summary: bool = True, workspace_root: str = None, out_dir: str = None, verbose: bool = True):
         self.verbose = verbose  # Control verbose debug output
         
@@ -1227,7 +1232,7 @@ class WebSearchTools:
                             # 性能优化：降低等待时间以加快结果返回
                             # 权衡：可能遗漏慢页面，但整体用户体验更好
                             # 如果搜索结果不完整，考虑增加等待时间
-                            wait_time = 2000 if engine['name'].startswith('Baidu') else 1500
+                            wait_time = self.BAIDU_WAIT_TIME_MS if engine['name'].startswith('Baidu') else self.DEFAULT_WAIT_TIME_MS
                             page.wait_for_timeout(wait_time)
                             
                             # Skip scrolling for faster results (removed lazy loading scroll)
@@ -2124,7 +2129,7 @@ class WebSearchTools:
             print_debug(f"📥 [{global_index+1}] Starting download: {target_url}")
 
             # 使用 requests 下载网页（增加超时时间以提高成功率）
-            download_timeout = 15.0  # 超时时间（秒）
+            download_timeout = self.DOWNLOAD_TIMEOUT_SEC  # 超时时间（秒）
             html_content, final_url, title = self._download_webpage_with_requests(target_url, timeout=download_timeout, debug_index=global_index+1)
 
             if not html_content:
@@ -2290,7 +2295,7 @@ class WebSearchTools:
         # 使用 ThreadPoolExecutor 并行下载（适度并发减少封禁风险）
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import threading
-        max_workers = min(8, len(urls_to_download))
+        max_workers = min(self.MAX_PARALLEL_WORKERS, len(urls_to_download))
         
         print_debug(f"🚀 Starting parallel download with {max_workers} workers for {len(urls_to_download)} pages...")
 
