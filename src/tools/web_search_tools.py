@@ -23,9 +23,8 @@ import time
 import requests
 import urllib.parse
 from typing import List, Dict, Any
-import os
-import signal
 import platform
+import os
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 import datetime
@@ -38,25 +37,12 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config_loader import get_web_content_truncation_length, get_truncation_length, get_zhipu_search_api_key, get_zhipu_search_engine, get_language
 
 
-class TimeoutError(Exception):
-    """Custom timeout exception"""
-    pass
-
-
-def timeout_handler(signum, frame):
-    """Signal handler for timeout"""
-    raise TimeoutError("Operation timed out")
+import time
 
 
 def is_windows():
     """Check if running on Windows"""
     return platform.system().lower() == 'windows'
-
-
-def is_main_thread():
-    """Check if running in main thread"""
-    import threading
-    return threading.current_thread() is threading.main_thread()
 
 
 # Check if the model is a Claude model
@@ -912,16 +898,10 @@ class WebSearchTools:
         else:
             print_current(f"📝 Only get search result summaries, not webpage content")
         
-        # Set global timeout of 90 seconds for the entire search operation
-        # Increased from 60s to accommodate multiple search engine attempts
-        old_handler = None
-        if not is_windows() and is_main_thread():
-            try:
-                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(90)  # 90 seconds timeout
-            except ValueError as e:
-                print_current(f"⚠️ Cannot set signal handler (not in main thread): {e}")
-                old_handler = None
+        # 设置整个搜索操作的最大时长（120秒兜底超时，跨平台兼容）
+        # 使用时间戳控制替代signal.alarm，精确且无副作用
+        MAX_SEARCH_DURATION = 120
+        overall_start_time = time.time()
         
         browser = None
         try:
@@ -1479,6 +1459,11 @@ class WebSearchTools:
                         
                         attempt = 0
                         while len(valid_results) < max_content_results and attempt < max_attempts and len(downloaded_indices) < len(results):
+                            # 检查总时长是否超限（优雅超时替代signal.alarm）
+                            if time.time() - overall_start_time > MAX_SEARCH_DURATION:
+                                print_debug(f"Search duration exceeded max ({MAX_SEARCH_DURATION}s), stopping gracefully")
+                                break
+                            
                             # Find next batch of results to download
                             batch_to_download = []
                             for idx, result in enumerate(results):
@@ -1782,15 +1767,6 @@ class WebSearchTools:
             }
         
         finally:
-            # Reset the alarm and restore the original signal handler
-            if not is_windows() and is_main_thread() and old_handler is not None:
-                try:
-                    signal.alarm(0)
-                    signal.signal(signal.SIGALRM, old_handler)
-                except ValueError:
-                    # Already not in main thread, nothing to clean up
-                    pass
-            
             # Emergency browser cleanup
             if browser:
                 try:
@@ -3899,15 +3875,9 @@ Cleaned Content Length: {len(cleaned_content)} characters
                 'timestamp': datetime.datetime.now().isoformat()
             }
         
-        # Set timeout for this operation
-        old_handler = None
-        if not is_windows() and is_main_thread():
-            try:
-                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(30)  # 30 second timeout
-            except ValueError as e:
-                print_current(f"⚠️ Cannot set signal handler (not in main thread): {e}")
-                old_handler = None
+        # Set timeout for this operation (30秒超时，使用时间戳控制替代signal.alarm)
+        op_start_time = time.time()
+        MAX_OP_DURATION = 30
         
         # Check if Playwright is available before proceeding
         if not is_playwright_available():
@@ -4093,14 +4063,7 @@ Cleaned Content Length: {len(cleaned_content)} characters
             }
         
         finally:
-            # Reset the alarm and restore the original signal handler
-            if not is_windows() and is_main_thread() and old_handler is not None:
-                try:
-                    signal.alarm(0)
-                    signal.signal(signal.SIGALRM, old_handler)
-                except ValueError:
-                    # Already not in main thread, nothing to clean up
-                    pass
+            pass  # 时间戳控制，无需额外清理
 
 
     def _normalize_url(self, url: str) -> str:
@@ -4403,14 +4366,8 @@ Cleaned Content Length: {len(cleaned_content)} characters
         print_current(f"🔍 Image search: {query}")
         
         # Set timeout handling
-        old_handler = None
-        if not is_windows() and is_main_thread():
-            try:
-                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(30)  # 30 second timeout
-            except ValueError as e:
-                print_current(f"⚠️ Cannot set signal handler (not in main thread): {e}")
-                old_handler = None
+        op_start_time = time.time()
+        MAX_OP_DURATION = 30
         
         # Check if Playwright is available before proceeding
         if not is_playwright_available():
@@ -4555,6 +4512,11 @@ Cleaned Content Length: {len(cleaned_content)} characters
                 }
                 
                 for engine in search_engines:
+                    # 检查总时长是否超限（优雅超时替代signal.alarm）
+                    if time.time() - op_start_time > MAX_OP_DURATION:
+                        print_debug(f"Image search duration exceeded max ({MAX_OP_DURATION}s), stopping gracefully")
+                        break
+                    
                     try:
                         # Skip this engine if it has failed before (except Baidu Images which should always be tried)
                         if engine['name'] in self.failed_engines and engine['name'] != 'Baidu Images':
@@ -4850,14 +4812,6 @@ Cleaned Content Length: {len(cleaned_content)} characters
             }
             
         finally:
-            # Reset timeout signal
-            if not is_windows() and is_main_thread() and old_handler is not None:
-                try:
-                    signal.alarm(0)
-                    signal.signal(signal.SIGALRM, old_handler)
-                except ValueError:
-                    pass
-            
             # Ensure browser is closed
             if browser:
                 try:
