@@ -27,6 +27,7 @@ from .terminal_tools import TerminalTools
 from .web_search_tools import WebSearchTools
 from .help_tools import HelpTools
 from .mouse_tools import MouseTools
+from .browser_tools import BrowserTools
 from .image_generation_tools import ImageGenerationTools
 
 # Import MCP knowledge base tools
@@ -59,6 +60,7 @@ if PLUGIN_TOOLS_AVAILABLE and MCP_KB_TOOLS_AVAILABLE:
         WebSearchTools,
         HelpTools,
         MouseTools,
+        BrowserTools,
         MCPKnowledgeBaseTools,
         PluginTools,
         ImageGenerationTools
@@ -75,6 +77,7 @@ if PLUGIN_TOOLS_AVAILABLE and MCP_KB_TOOLS_AVAILABLE:
             WebSearchTools.__init__(self, llm_api_key, llm_model, llm_api_base, enable_llm_filtering, enable_summary, workspace_root=workspace_root, out_dir=out_dir)
             HelpTools.__init__(self)
             MouseTools.__init__(self)
+            BrowserTools.__init__(self, workspace_root)
             MCPKnowledgeBaseTools.__init__(self, workspace_root, user_id)
             PluginTools.__init__(self, workspace_root)
             ImageGenerationTools.__init__(self, workspace_root)
@@ -143,6 +146,7 @@ elif MCP_KB_TOOLS_AVAILABLE:
         WebSearchTools,
         HelpTools,
         MouseTools,
+        BrowserTools,
         MCPKnowledgeBaseTools,
         ImageGenerationTools
     ):
@@ -158,6 +162,7 @@ elif MCP_KB_TOOLS_AVAILABLE:
             WebSearchTools.__init__(self, llm_api_key, llm_model, llm_api_base, enable_llm_filtering, enable_summary, workspace_root=workspace_root, out_dir=out_dir)
             HelpTools.__init__(self)
             MouseTools.__init__(self)
+            BrowserTools.__init__(self, workspace_root)
             MCPKnowledgeBaseTools.__init__(self, workspace_root, user_id)
             ImageGenerationTools.__init__(self, workspace_root)
         
@@ -225,6 +230,7 @@ else:
         WebSearchTools,
         HelpTools,
         MouseTools,
+        BrowserTools,
         ImageGenerationTools
     ):
         def __init__(self, workspace_root: str = None, llm_api_key: str = None, 
@@ -239,6 +245,7 @@ else:
             WebSearchTools.__init__(self, llm_api_key, llm_model, llm_api_base, enable_llm_filtering, enable_summary, workspace_root=workspace_root, out_dir=out_dir)
             HelpTools.__init__(self)
             MouseTools.__init__(self)
+            BrowserTools.__init__(self, workspace_root)
             ImageGenerationTools.__init__(self, workspace_root)
         
         def cleanup(self):

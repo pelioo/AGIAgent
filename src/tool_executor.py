@@ -387,6 +387,7 @@ class ToolExecutor:
             "parse_doc_to_md": self.tools.parse_doc_to_md,
             "convert_docs_to_markdown": self.tools.convert_docs_to_markdown,
             "create_img": self.tools.create_img,
+            "browser_automation": self.tools.browser_automation,
         }
         
         # Add history compression tool if available

@@ -631,5 +631,39 @@
       },
       "required": []
     }
+  },
+  "browser_automation": {
+    "description": "Control a real browser for web interaction. Perfect for forms, clicks, login, scraping dynamic content.\n\nWORKFLOW (MUST FOLLOW IN ORDER):\n1. browser_automation(action='open', url='...') - Open page\n2. browser_automation(action='snapshot') - Get elements with @refs\n3. Use @refs to interact: click, fill, check, etc.\n4. browser_automation(action='close') - ALWAYS close browser when done\n\nExample workflow:\n  1. open(url='https://example.com/form') → get page\n  2. snapshot() → returns @e1, @e2, ...\n  3. fill(selector='@e1', value='John') → fill input\n  4. click(selector='@e3') → submit\n  5. close() → cleanup\n\nSelector tips: @e1 (from snapshot), text/Label, [name=x], CSS #id",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "Action: open|snapshot|click|fill|check|press|close"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL for open action"
+        },
+        "selector": {
+          "type": "string",
+          "description": "Element: @e1, text/Label, [name=x], #id"
+        },
+        "value": {
+          "type": "string",
+          "description": "Value for fill/type"
+        },
+        "key": {
+          "type": "string",
+          "description": "Key for press: Enter|Escape|Tab"
+        },
+        "headless": {
+          "type": "boolean",
+          "description": "Hide browser window",
+          "default": false
+        }
+      },
+      "required": ["action"]
+    }
   }
 }
