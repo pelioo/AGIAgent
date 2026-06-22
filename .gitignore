@@ -73,6 +73,7 @@ Extend-dependenc/
 # 排除工作区文件夹
 data/peli/
 data/default/
+.cowork/
 
 # 其它排除 
 manager.out
