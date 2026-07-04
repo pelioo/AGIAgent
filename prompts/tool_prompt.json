@@ -639,28 +639,73 @@
       "properties": {
         "action": {
           "type": "string",
-          "description": "Action: open|snapshot|click|fill|check|press|close"
+          "description": "Action: open|snapshot|click|fill|check|uncheck|press|select|type|scroll|hover|screenshot|get_text|get_value|is_checked|get_url|reload|back|forward|wait|keyboard_type|fill_form|navigate_and_interact|close"
         },
         "url": {
           "type": "string",
-          "description": "URL for open action"
+          "description": "URL for open action. http/https only by default; file:// requires workspace_root."
         },
         "selector": {
           "type": "string",
-          "description": "Element: @e1, text/Label, [name=x], #id"
+          "description": "Element: @e1 (from snapshot), text/Label, [name=x], #id, CSS selector"
         },
         "value": {
           "type": "string",
-          "description": "Value for fill/type"
+          "description": "Value for fill/type/select. For wait, treated as milliseconds if numeric."
         },
         "key": {
           "type": "string",
-          "description": "Key for press: Enter|Escape|Tab"
+          "description": "Key for press: Enter|Escape|Tab|ArrowDown|ArrowUp etc."
         },
         "headless": {
           "type": "boolean",
-          "description": "Hide browser window",
+          "description": "Hide browser window. Default true (suitable for server/CI/container). Set false for visible debugging.",
+          "default": true
+        },
+        "path": {
+          "type": "string",
+          "description": "For screenshot action: output file path (relative to workspace or absolute inside workspace)."
+        },
+        "full": {
+          "type": "boolean",
+          "description": "For screenshot action: capture full scrollable page (true) or just viewport (false). Default false.",
           "default": false
+        },
+        "annotate": {
+          "type": "boolean",
+          "description": "For screenshot action: overlay @ref labels on elements. Default false.",
+          "default": false
+        },
+        "direction": {
+          "type": "string",
+          "description": "For scroll action: 'up' | 'down' | 'left' | 'right'. Default 'down'."
+        },
+        "pixels": {
+          "type": "integer",
+          "description": "For scroll action: number of pixels to scroll (1-10000). Default 500."
+        },
+        "wait_for": {
+          "type": "string",
+          "description": "For wait action: integer milliseconds (e.g. '1000') or CSS selector to wait for."
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "For snapshot action: include only interactive elements (default true). Set false to include all elements.",
+          "default": true
+        },
+        "data": {
+          "type": "object",
+          "description": "For fill_form action: dict of {field_name_or_selector: value} pairs.",
+          "additionalProperties": {"type": "string"}
+        },
+        "submit_selector": {
+          "type": "string",
+          "description": "For fill_form action: optional selector of submit button to click after filling."
+        },
+        "actions": {
+          "type": "array",
+          "description": "For navigate_and_interact action: list of {type, selector, value} steps to run after opening.",
+          "items": {"type": "object"}
         }
       },
       "required": ["action"]
