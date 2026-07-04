@@ -31,11 +31,25 @@ import datetime
 import base64
 import io
 
-# 导入 config_loader 以获取截断长度配置 
+# 导入 config_loader 以获取截断长度配置
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config_loader import get_web_content_truncation_length, get_truncation_length, get_zhipu_search_api_key, get_zhipu_search_engine, get_language
 
+
+# 项目内可移植回退：未显式设置 PLAYWRIGHT_BROWSERS_PATH 时，自动
+# 指向 ./Extend-dependenc/playwright/（install.ps1 默认安装位置）。
+# 这样在 IDE、裸 agia.py、CI 子进程等 install 脚本未生效 env 的场景下，
+# web_search 也能找到 Chromium。
+# 优先级：已存在的 env > 本地项目缓存 > 默认（用户目录）。
+# 注：只在找不到时设置，幂等；不在每次 web_search 调用时执行。
+if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+    _project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+    _local_cache = os.path.join(_project_root, "Extend-dependenc", "playwright")
+    if os.path.isdir(_local_cache):
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = _local_cache
 
 
 def is_windows():
@@ -940,6 +954,7 @@ class WebSearchTools:
                 try:
                     browser = p.chromium.launch(
                         headless=True,
+                        channel="chromium-headless-shell",  # 精简 headless binary；web_search 永远 headless，启动快 ~3x、内存省 ~60%
                         args=[
                             '--no-sandbox',
                             '--disable-setuid-sandbox',
@@ -3918,6 +3933,7 @@ Cleaned Content Length: {len(cleaned_content)} characters
                 try:
                     browser = p.chromium.launch(
                         headless=True,
+                        channel="chromium-headless-shell",  # 精简 headless binary；web_search 永远 headless，启动快 ~3x、内存省 ~60%
                         args=[
                             '--no-sandbox',
                             '--disable-setuid-sandbox',
@@ -4476,6 +4492,7 @@ Cleaned Content Length: {len(cleaned_content)} characters
                 try:
                     browser = p.chromium.launch(
                         headless=True,
+                        channel="chromium-headless-shell",  # 精简 headless binary；web_search 永远 headless，启动快 ~3x、内存省 ~60%
                         args=[
                             '--no-sandbox',
                             '--disable-setuid-sandbox',
