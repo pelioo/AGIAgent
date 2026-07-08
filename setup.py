@@ -88,6 +88,9 @@ setup(
         "eventlet>=0.30.0",
     ],
     extras_require={
+        "browser": [
+            "playwright>=1.20.0",
+        ],
         "dev": [
             # Testing framework
             "pytest>=7.0.0",

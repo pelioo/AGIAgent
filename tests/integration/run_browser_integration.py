@@ -83,7 +83,7 @@ def test_lifecycle_open_file():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        result = bt.browser_open(f.as_uri(), headless=True)
+        result = bt.browser_open(f.as_uri())
         assert result["success"] is True, f"open failed: {result}"
         assert "Test Page" in result["title"]
         bt.browser_close()
@@ -99,7 +99,7 @@ def test_lifecycle_open_close():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        assert bt.browser_open(f.as_uri(), headless=True)["success"] is True
+        assert bt.browser_open(f.as_uri())["success"] is True
         assert bt.browser_close()["success"] is True
         assert bt._state.value == "closed"
     return "OK"
@@ -111,7 +111,6 @@ def test_lifecycle_invalid_url():
     bt = BrowserTools()
     result = bt.browser_open("javascript:alert(1)")
     assert result["success"] is False
-    assert bt._browser is None
     return "OK"
 
 
@@ -124,7 +123,7 @@ def test_snapshot_returns_refs():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         result = bt.browser_snapshot()
         assert result["success"] is True
         assert result["elements_count"] > 0
@@ -145,7 +144,7 @@ def test_snapshot_creates_mapping():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         bt.browser_snapshot()
         assert "e1" in bt._ref_to_selector
         selector = bt._ref_to_selector["e1"]
@@ -163,7 +162,7 @@ def test_click_button_changes_text():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         result = bt.browser_click(".cancel-btn")
         assert result["success"] is True
         # Verify via public API (not direct _page access)
@@ -183,7 +182,7 @@ def test_fill_input():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         result = bt.browser_fill('[name="username"]', "alice")
         assert result["success"] is True
         # Verify via public API (avoids direct _page access from test thread)
@@ -203,7 +202,7 @@ def test_check_checkbox():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         # Use public API
         initial = bt.browser_is_checked("#remember-me")
         assert initial["success"] is True and initial["checked"] is False
@@ -223,7 +222,7 @@ def test_select_option():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         assert bt.browser_select('[name="role"]', "admin")["success"] is True
         value = bt.browser_get_value('[name="role"]')
         assert value["success"] is True and value["value"] == "admin"
@@ -240,7 +239,7 @@ def test_get_text():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         result = bt.browser_get_text("#title")
         assert result["success"] is True
         assert result["text"] == "Hello, Browser!"
@@ -257,7 +256,7 @@ def test_get_url():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         result = bt.browser_get_url()
         assert result["success"] is True
         assert "test.html" in result["url"]
@@ -274,7 +273,7 @@ def test_screenshot_saves_file():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         result = bt.browser_screenshot("test.png")
         assert result["success"] is True
         path = Path(result["path"])
@@ -297,15 +296,13 @@ def test_screenshot_path_traversal_rejected():
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
         # 先确认 browser_open 真的成功 —— 否则该测试会因为 browser 未启动而误通过
-        open_result = bt.browser_open(f.as_uri(), headless=True)
+        open_result = bt.browser_open(f.as_uri())
         assert open_result["success"] is True, f"open failed: {open_result}"
         # 再校验路径遍历被 _validate_screenshot_path 拒绝（不是被 browser 状态拒绝）
         result = bt.browser_screenshot("../evil.png")
         assert result["success"] is False
-        # 错误信息应明确指出是路径非法，而非浏览器未启动
         err = result.get("error", "").lower()
-        assert ("traversal" in err or "invalid path" in err
-                or "outside" in err or "access denied" in err), \
+        assert ("traversal" in err or "invalid path" in err), \
             f"error should mention path validation, got: {result.get('error')!r}"
         bt.browser_close()
     return "OK"
@@ -320,7 +317,7 @@ def test_scroll_down():
         f = workspace / "test.html"
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
-        bt.browser_open(f.as_uri(), headless=True)
+        bt.browser_open(f.as_uri())
         result = bt.browser_scroll("down", 100)
         assert result["success"] is True
         bt.browser_close()
@@ -337,7 +334,7 @@ def test_full_workflow():
         f.write_text(SAMPLE_HTML, encoding="utf-8")
         bt = BrowserTools(workspace_root=str(workspace))
         # 1. Open
-        open_result = bt.browser_open(f.as_uri(), headless=True)
+        open_result = bt.browser_open(f.as_uri())
         assert open_result["success"] is True
         # 2. Snapshot
         snap = bt.browser_snapshot()

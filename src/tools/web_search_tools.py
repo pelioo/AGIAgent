@@ -105,6 +105,12 @@ class WebSearchTools:
     DEFAULT_WAIT_TIME_MS = 1500    # 其他引擎页面等待时间（毫秒）
     DOWNLOAD_TIMEOUT_SEC = 15.0     # 网页下载超时时间（秒）
     MAX_PARALLEL_WORKERS = 8        # 并行下载最大线程数
+    MAX_CONTENT_LENGTH_FOR_CLEANING = 500000  # 500KB limit for content cleaning
+    NAVIGATION_KEYWORDS = (
+        'login', 'register', 'home', 'navigation', 'menu', 'search', 'share',
+        'copyright', 'contact us', 'about us', 'privacy policy', 'terms of use',
+    )
+    SENSITIVE_TITLE_KEYWORDS = ['总书记', '习近平']
     def __init__(self, llm_api_key: str = None, llm_model: str = None, llm_api_base: str = None, enable_llm_filtering: bool = False, enable_summary: bool = True, workspace_root: str = None, out_dir: str = None, verbose: bool = True):
         self.verbose = verbose  # Control verbose debug output
         
@@ -460,23 +466,19 @@ class WebSearchTools:
                     
                     with open(html_filepath, 'w', encoding='utf-8') as f:
                         f.write(html_content)
-                    # 成功保存HTML后，记录URL以避免重复下载
-                    if normalized_url:
-                        self.downloaded_urls.add(normalized_url)
-
                     
             except Exception as e:
                 print_current(f"⚠️ Failed to save webpage HTML: {e}")
+                html_filepath = ""
             
             # Save text content
             try:
                 if content and content.strip():
                     # For very large content, truncate before cleaning to avoid timeout
-                    MAX_CONTENT_LENGTH_FOR_CLEANING = 500000  # 500KB limit
                     content_to_clean = content
-                    if len(content) > MAX_CONTENT_LENGTH_FOR_CLEANING:
-                        print_current(f"⚠️ Content too large ({len(content)} chars), truncating to {MAX_CONTENT_LENGTH_FOR_CLEANING} chars before cleaning")
-                        content_to_clean = content[:MAX_CONTENT_LENGTH_FOR_CLEANING]
+                    if len(content) > self.MAX_CONTENT_LENGTH_FOR_CLEANING:
+                        print_current(f"⚠️ Content too large ({len(content)} chars), truncating to {self.MAX_CONTENT_LENGTH_FOR_CLEANING} chars before cleaning")
+                        content_to_clean = content[:self.MAX_CONTENT_LENGTH_FOR_CLEANING]
                     
                     # Clean the content thoroughly for saving with timeout protection
                     cleaned_content = None
@@ -529,9 +531,6 @@ class WebSearchTools:
                         try:
                             with open(txt_filepath, 'w', encoding='utf-8') as f:
                                 f.write(formatted_content)
-                            # 成功保存后，记录URL以避免重复下载
-                            if normalized_url:
-                                self.downloaded_urls.add(normalized_url)
                         except Exception as write_error:
                             print_current(f"⚠️ Failed to write text file: {write_error}")
                             txt_filepath = ""  # Reset filepath on write failure
@@ -548,6 +547,10 @@ class WebSearchTools:
                 else:
                     print_current(f"⚠️ Failed to save text content: {e}, continuing without txt file")
                 txt_filepath = ""  # Ensure we return empty string on error
+            
+            # 统一在完成所有保存后记录URL
+            if normalized_url and (html_filepath or txt_filepath):
+                self.downloaded_urls.add(normalized_url)
             
             return html_filepath, txt_filepath
             
@@ -2274,8 +2277,7 @@ class WebSearchTools:
 
             # Skip pages with specific titles (political content filter)
             title = result.get('title', '').lower()
-            sensitive_keywords = ['总书记', '习近平']
-            if any(keyword in title for keyword in sensitive_keywords):
+            if any(keyword in title for keyword in self.SENSITIVE_TITLE_KEYWORDS):
                 result['content'] = "Political content filtered - title contains sensitive keywords"
                 continue
 
@@ -2389,8 +2391,7 @@ class WebSearchTools:
             try:
                 # Skip pages with specific titles (political content filter)
                 title_full = result.get('title', '').lower()
-                sensitive_keywords = ['总书记', '习近平']
-                if any(keyword in title_full for keyword in sensitive_keywords):
+                if any(keyword in title_full for keyword in self.SENSITIVE_TITLE_KEYWORDS):
                     print_debug(f"🚫 Political content filtered: '{result.get('title', '')}' contains sensitive keywords")
                     result['content'] = "Political content filtered - title contains sensitive keywords"
                     continue
@@ -2435,14 +2436,6 @@ class WebSearchTools:
                 # Skip ads-by pages
                 if 'ads-by' in target_url.lower():
                     result['content'] = "Advertisement page, skip content fetch"
-                    continue
-                
-                # Skip pages with specific titles (political content filter)
-                title_lower = result.get('title', '').lower()
-                sensitive_keywords = ['总书记', '习近平']
-                if any(keyword in title_lower for keyword in sensitive_keywords):
-                    print_debug(f"🚫 Political content filtered (fallback): '{result.get('title', '')}' contains sensitive keywords")
-                    result['content'] = "Political content filtered - title contains sensitive keywords"
                     continue
 
                 if target_url.startswith('javascript:') or target_url.startswith('mailto:'):
@@ -2763,12 +2756,7 @@ class WebSearchTools:
         """
         Check if text is high-quality main content
         """
-        navigation_keywords = [
-            'login', 'register', 'home', 'navigation', 'menu', 'search', 'share',
-            'copyright', 'contact us', 'about us', 'privacy policy', 'terms of use',
-            'login', 'register', 'home', 'menu', 'search', 'share',
-            'copyright', 'contact us', 'about us', 'privacy', 'terms'
-        ]
+        text_lower = text.lower()
         
         # Check for Chinese content (likely news content)
         import re
@@ -2776,7 +2764,7 @@ class WebSearchTools:
         if chinese_chars > 10:  # If has substantial Chinese content, likely good
             return True
         
-        nav_count = sum(1 for keyword in navigation_keywords if keyword.lower() in text.lower())
+        nav_count = sum(1 for keyword in self.NAVIGATION_KEYWORDS if keyword in text_lower)
         words_count = len(text.split())
         
         # Be more lenient with navigation keyword ratio for news content
@@ -3006,10 +2994,6 @@ class WebSearchTools:
             debug_prefix = f"[{debug_index}]" if debug_index else ""
             print_debug(f"🔌 {debug_prefix} Connection error: {url} - {e}")
             return None, None, None
-        except requests.exceptions.HTTPError as e:
-            debug_prefix = f"[{debug_index}]" if debug_index else ""
-            print_debug(f"🌐 {debug_prefix} HTTP error: {url} - {e}")
-            return None, None, None
         except Exception as e:
             debug_prefix = f"[{debug_index}]" if debug_index else ""
             print_debug(f"⚠️ {debug_prefix} Requests download failed: {url} - {e}")
@@ -3216,22 +3200,19 @@ class WebSearchTools:
                     
                     with open(html_filepath, 'w', encoding='utf-8') as f:
                         f.write(html_content)
-                    # 成功保存HTML后，记录URL以避免重复下载
-                    if normalized_url:
-                        self.downloaded_urls.add(normalized_url)
                     
             except Exception as e:
                 print_current(f"⚠️ Failed to save webpage HTML: {e}")
+                html_filepath = ""
             
             # Save text content
             try:
                 if content and content.strip():
                     # For very large content, truncate before cleaning
-                    MAX_CONTENT_LENGTH_FOR_CLEANING = 500000
                     content_to_clean = content
-                    if len(content) > MAX_CONTENT_LENGTH_FOR_CLEANING:
-                        print_current(f"⚠️ Content too large ({len(content)} chars), truncating to {MAX_CONTENT_LENGTH_FOR_CLEANING} chars before cleaning")
-                        content_to_clean = content[:MAX_CONTENT_LENGTH_FOR_CLEANING]
+                    if len(content) > self.MAX_CONTENT_LENGTH_FOR_CLEANING:
+                        print_current(f"⚠️ Content too large ({len(content)} chars), truncating to {self.MAX_CONTENT_LENGTH_FOR_CLEANING} chars before cleaning")
+                        content_to_clean = content[:self.MAX_CONTENT_LENGTH_FOR_CLEANING]
                     
                     # Clean the content
                     cleaned_content = None
@@ -3274,9 +3255,6 @@ Cleaned Content Length: {len(cleaned_content)} characters
                         try:
                             with open(txt_filepath, 'w', encoding='utf-8') as f:
                                 f.write(formatted_content)
-                            # 成功保存后，记录URL
-                            if normalized_url:
-                                self.downloaded_urls.add(normalized_url)
                         except Exception as write_error:
                             print_current(f"⚠️ Failed to write text file: {write_error}")
                             txt_filepath = ""
@@ -3284,6 +3262,10 @@ Cleaned Content Length: {len(cleaned_content)} characters
             except Exception as e:
                 print_current(f"⚠️ Failed to save text content: {e}")
                 txt_filepath = ""
+            
+            # 统一在完成所有保存后记录URL
+            if normalized_url and (html_filepath or txt_filepath):
+                self.downloaded_urls.add(normalized_url)
             
             return html_filepath, txt_filepath
             
