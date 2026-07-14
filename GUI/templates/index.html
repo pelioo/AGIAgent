@@ -11402,7 +11402,7 @@
                         ${I18N.file_size || 'File Size'}: ${size} | ${I18N.type_label || 'Type'}: HTML
 
                     </div>
-                    <iframe src="${previewUrl}" style="width: 100%; height: calc(90vh - 160px); border: none; border-radius: 4px; background: white;"></iframe>
+                    <iframe src="${previewUrl}" sandbox="allow-same-origin allow-scripts" referrerpolicy="no-referrer" style="width: 100%; height: calc(90vh - 160px); border: none; border-radius: 4px; background: white;"></iframe>
                 `;
             } else if (type === 'markdown') {
                 // 处理转义字符

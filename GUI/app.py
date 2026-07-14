@@ -4375,8 +4375,10 @@ def serve_html_preview(file_path):
             flags=re.IGNORECASE
         )
         
-        return Response(html_content, mimetype='text/html')
-        
+        response = Response(html_content, mimetype='text/html')
+        from security_headers import apply_html_preview_security_headers
+        return apply_html_preview_security_headers(response)
+
     except Exception as e:
         print(f"Error serving HTML preview {file_path}: {str(e)}")
         import traceback
