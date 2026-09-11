@@ -122,6 +122,7 @@ APP_NAME = "AGI Agent"
 
 from src.main import AGIAgentMain
 from app_manager import AppManager
+from security_headers import apply_html_preview_security_headers
 
 
 
@@ -4376,7 +4377,6 @@ def serve_html_preview(file_path):
         )
         
         response = Response(html_content, mimetype='text/html')
-        from security_headers import apply_html_preview_security_headers
         return apply_html_preview_security_headers(response)
 
     except Exception as e:
