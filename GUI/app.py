@@ -122,6 +122,7 @@ APP_NAME = "AGI Agent"
 
 from src.main import AGIAgentMain
 from app_manager import AppManager
+# 必需依赖：用于 HTML 预览端点的安全响应头，缺失则启动失败
 from security_headers import apply_html_preview_security_headers
 
 
